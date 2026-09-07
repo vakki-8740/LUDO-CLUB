@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { RulesPopup } from './Popups.jsx';
 
-export default function Home({ profile, go }) {
+export default function Home({ profile, go, canInstall, onInstall }) {
   const [rules, setRules] = useState(false);
   const kycDone = profile && profile.kycStatus === 'approved';
 
@@ -43,8 +43,7 @@ export default function Home({ profile, go }) {
         ))}
       </div>
 
-      <div className="section-title" style={{ marginTop: 20 }}>Quick Actions</div>
-      <div className="quick-actions">
+      <div className="section-title" style={{ marginTop: 20 }}>Quick Actions</div>      <div className="quick-actions">
         <div className="qa-card" onClick={() => go('wallet')}>
           <i className="fas fa-plus-circle" style={{ color: 'var(--success)', fontSize: 28 }}></i>
           <span>Deposit</span>
@@ -62,6 +61,15 @@ export default function Home({ profile, go }) {
           <span>Referral</span>
         </div>
       </div>
+
+      {canInstall && (
+        <div className="notice-card" style={{ background: 'linear-gradient(135deg,#e8f9ee,#d6f5e0)', borderColor: 'var(--success)', marginTop: 16 }} onClick={onInstall}>
+          <div className="notice-icon" style={{ background: 'var(--success)' }}><i className="fas fa-download"></i></div>
+          <div className="notice-text" style={{ color: '#1b5e20' }}>
+            <strong>App Install Karo</strong><br />Home screen se 1-tap me khelo — yahan tap karo!
+          </div>
+        </div>
+      )}
 
       {rules && <RulesPopup onClose={() => setRules(false)} />}
     </div>

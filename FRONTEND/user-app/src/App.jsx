@@ -93,6 +93,39 @@ export default function App() {
   const [toastMsg, setToastMsg] = useState(null);
   const toastTimer = useRef(null);
   const autoNavRef = useRef('');
+  const [installEvt, setInstallEvt] = useState(null);
+  const [iosHelp, setIosHelp] = useState(false);
+
+  const isIOS =
+    typeof navigator !== 'undefined' && /iphone|ipad|ipod/i.test(navigator.userAgent || '');
+  const isInstalled =
+    typeof window !== 'undefined' &&
+    (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true);
+
+  // Install prompt pakdo (Chrome/Android)
+  useEffect(() => {
+    function onPrompt(e) {
+      e.preventDefault();
+      setInstallEvt(e);
+    }
+    window.addEventListener('beforeinstallprompt', onPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', onPrompt);
+  }, []);
+
+  async function installApp() {
+    if (installEvt) {
+      installEvt.prompt();
+      try {
+        await installEvt.userChoice;
+      } catch (e) {}
+      setInstallEvt(null);
+    } else if (isIOS && !isInstalled) {
+      setIosHelp(true);
+      setMenu(false);
+    }
+  }
+
+  const canInstall = !!installEvt || (isIOS && !isInstalled);
 
   // PayU se wapas: ?pay=txnId -> success page (asli status backend se)
   useEffect(() => {
@@ -220,7 +253,7 @@ export default function App() {
       </div>
 
       <div className="main-content" id="main-content">
-        {base === 'home' && <Home profile={profile} go={go} />}
+        {base === 'home' && <Home profile={profile} go={go} canInstall={canInstall} onInstall={installApp} />}
         {base === 'lobby' && <Lobby bets={bets} profile={profile} uid={user.uid} toast={toast} go={go} />}
         {base === 'wallet' && <Wallet profile={profile} go={go} />}
         {base === 'deposit' && <Deposit profile={profile} uid={user.uid} toast={toast} go={go} />}
@@ -274,6 +307,11 @@ export default function App() {
         <div className="sm-item" onClick={() => go('mail')}><i className="fas fa-envelope"></i> Inbox</div>
         <div className="sm-item" onClick={() => go('kyc')}><i className="fas fa-id-card"></i> KYC Verification</div>
         <div className="sm-item" onClick={() => go('support')}><i className="fas fa-headset"></i> Support Team</div>
+        {canInstall && (
+          <div className="sm-item" onClick={installApp} style={{ color: 'var(--success)' }}>
+            <i className="fas fa-download"></i> Install App
+          </div>
+        )}
         <div className="sm-divider"></div>
         <div className="sm-item" onClick={() => go('info:privacy')}><i className="fas fa-shield-alt"></i> Privacy Policy</div>
         <div className="sm-item" onClick={() => go('info:terms')}><i className="fas fa-file-contract"></i> Terms &amp; Conditions</div>
@@ -283,6 +321,21 @@ export default function App() {
       </div>
 
       {toastMsg && <div id="toast" style={{ display: 'block', background: toastMsg.bg }}>{toastMsg.msg}</div>}
+
+      {/* iPhone install help */}
+      {iosHelp && (
+        <div className="popup-overlay" style={{ display: 'flex' }} onClick={() => setIosHelp(false)}>
+          <div className="popup" style={{ textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+            <div className="popup-header">App Install Karo</div>
+            <p style={{ fontSize: 14, lineHeight: 2, color: 'var(--text-muted)' }}>
+              1. Neeche <b>Share</b> button dabao<br />
+              2. <b>Add to Home Screen</b> chuno<br />
+              3. <b>Add</b> dabao — ho gaya!
+            </p>
+            <button className="btn" style={{ marginTop: 8 }} onClick={() => setIosHelp(false)}>OK</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
