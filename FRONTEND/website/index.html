@@ -7,15 +7,15 @@
 <title>Ludo Royal Club - Play & Win Real Money</title>
 <link rel="icon" type="image/png" href="./logo.png">
 <style>
-  :root { --bg:#0b0b10; --card:#15151d; --line:#23232e; --txt:#f2f2f7; --mut:#9a9aa5; --red:#ff3b30; --org:#ff9500; --grn:#34c759; --blu:#0a84ff; }
+  :root { --bg:#f2f2f7; --card:#ffffff; --line:#e5e5ea; --txt:#1d1d1f; --mut:#86868b; --red:#ff3b30; --org:#ff9500; --grn:#34c759; --blu:#0a84ff; }
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; background:var(--bg); color:var(--txt); }
   .wrap { max-width:640px; margin:0 auto; padding:0 20px 70px; }
   /* HERO */
   .hero { text-align:center; padding:64px 0 34px; position:relative; overflow:hidden; }
-  .hero::before { content:''; position:absolute; top:-120px; left:50%; transform:translateX(-50%); width:420px; height:300px; background:radial-gradient(closest-side,rgba(255,59,48,.28),transparent); pointer-events:none; }
-  .hero img.logo { width:132px; height:132px; border-radius:34px; object-fit:cover; box-shadow:0 14px 44px rgba(255,59,48,.35); position:relative; }
-  .pill { display:inline-block; margin-top:16px; padding:6px 16px; border-radius:999px; background:rgba(52,199,89,.12); color:var(--grn); font-size:12px; font-weight:700; letter-spacing:.4px; }
+  .hero::before { content:''; position:absolute; top:-120px; left:50%; transform:translateX(-50%); width:420px; height:300px; background:radial-gradient(closest-side,rgba(255,149,0,.18),transparent); pointer-events:none; }
+  .hero img.logo { width:132px; height:132px; border-radius:34px; object-fit:cover; box-shadow:0 14px 44px rgba(255,59,48,.25); position:relative; }
+  .pill { display:inline-block; margin-top:16px; padding:6px 16px; border-radius:999px; background:rgba(52,199,89,.12); color:#1b8a2e; font-size:12px; font-weight:700; letter-spacing:.4px; }
   .hero h1 { font-size:38px; font-weight:800; margin:12px 0 8px; letter-spacing:-.5px; }
   .hero h1 span { background:linear-gradient(135deg,var(--red),var(--org)); -webkit-background-clip:text; background-clip:text; color:transparent; }
   .hero p { color:var(--mut); font-size:15px; line-height:1.7; }
@@ -46,6 +46,7 @@
   details.card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:15px 16px; margin-top:10px; }
   details.card summary { font-size:14px; font-weight:700; cursor:pointer; }
   details.card p { font-size:13px; color:var(--mut); margin-top:8px; line-height:1.7; }
+  .feat, .stat, .card, details.card, .step { box-shadow:0 2px 12px rgba(0,0,0,.04); }
   .foot { text-align:center; margin-top:34px; font-size:12px; color:var(--mut); line-height:2; }
   @media (min-width:560px) { .hero h1 { font-size:44px; } }
 </style>
