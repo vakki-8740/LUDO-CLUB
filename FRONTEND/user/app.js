@@ -158,8 +158,6 @@ if (window.FirebaseReady) {
         if (!ok || !window.firebase || !firebase.auth) return;
         firebase.auth().onAuthStateChanged(async (g) => {
             if (g && !currentData) {
-                const lp = document.getElementById('login-page');
-                if (lp && lp.style.display === 'none') return;
                 try {
                     currentUser = g;
                     await ensureUserDoc(g);
@@ -182,6 +180,8 @@ function afterLogin() {
     document.getElementById('home-page').style.display = 'flex';
     updateUI();
     loadRealtimeData();
+    // Refresh pe URL hash se sahi section restore karo
+    restoreFromHash();
 }
 
 function logoutUser() {
@@ -189,6 +189,10 @@ function logoutUser() {
     currentData = null;
     stopBetsPolling();
     try { if (window.firebase && firebase.auth) firebase.auth().signOut(); } catch (e) {}
+    // Hash clear karo taaki refresh pe login page dikhe
+    if (window.location.hash) {
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
     document.getElementById('login-page').style.display = 'flex';
     document.getElementById('home-page').style.display = 'none';
 }
@@ -246,14 +250,61 @@ function checkKYCStatusHome() {
         currentData.kycStatus === 'approved' ? 'none' : 'flex';
 }
 
-// ==================== NAVIGATION ====================
-function navigateTo(sectionId) {
+// ==================== NAVIGATION (Hash-based: back button + refresh support) ====================
+const sectionToHash = {
+    'home-section': 'home',
+    'lobby-section': 'lobby',
+    'wallet-section': 'wallet',
+    'profile-section': 'profile',
+    'deposit-page-section': 'deposit',
+    'withdraw-page-section': 'withdraw',
+    'history-page-section': 'history',
+    'referral-section': 'referral',
+    'mail-section': 'mail',
+    'support-section': 'support',
+    'pages-section': 'pages'
+};
+const hashToSection = {};
+for (const [k, v] of Object.entries(sectionToHash)) hashToSection[v] = k;
+
+let _navLock = false; // hashchange se recursive call rokne ke liye
+
+function navigateTo(sectionId, fromHash) {
+    if (!document.getElementById(sectionId)) return;
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     document.getElementById(sectionId).classList.add('active');
     document.querySelectorAll('.bn-item').forEach(b => b.classList.remove('active'));
     const navMap = { 'home-section': 0, 'lobby-section': 1, 'wallet-section': 2, 'profile-section': 3 };
     if (navMap[sectionId] !== undefined) document.querySelectorAll('.bn-item')[navMap[sectionId]].classList.add('active');
     document.getElementById('main-content').scrollTop = 0;
+
+    // URL hash update karo (back button support ke liye)
+    if (!fromHash) {
+        const hash = sectionToHash[sectionId] || 'home';
+        if (window.location.hash !== '#' + hash) {
+            _navLock = true;
+            history.pushState(null, '', '#' + hash);
+        }
+    }
+}
+
+// Back button dabane pe hash change hota hai — us section pe jao
+window.addEventListener('hashchange', function () {
+    if (_navLock) { _navLock = false; return; }
+    const hash = window.location.hash.replace('#', '') || 'home';
+    const sectionId = hashToSection[hash] || 'home-section';
+    if (document.getElementById(sectionId)) {
+        navigateTo(sectionId, true);
+    }
+});
+
+// Page load / refresh pe — hash se section restore karo
+function restoreFromHash() {
+    const hash = window.location.hash.replace('#', '') || '';
+    const sectionId = hashToSection[hash];
+    if (sectionId && document.getElementById(sectionId)) {
+        navigateTo(sectionId, true);
+    }
 }
 
 function goToDeposit() {
