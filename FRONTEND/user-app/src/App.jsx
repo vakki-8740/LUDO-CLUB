@@ -87,7 +87,11 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [authChecked, setAuthChecked] = useState(false); // splash jab tak session pata na chale
-  const [screen, setScreen] = useState('home');
+  const [screen, setScreen] = useState(() => {
+    // Page load/refresh pe URL hash se screen restore karo
+    const hash = window.location.hash.replace('#', '') || '';
+    return hash || 'home';
+  });
   const [bets, setBets] = useState([]);
   const [menu, setMenu] = useState(false);
   const [toastMsg, setToastMsg] = useState(null);
@@ -148,6 +152,21 @@ export default function App() {
     setScreen(s);
     setMenu(false);
     document.getElementById('main-content')?.scrollTo(0, 0);
+    // URL hash update karo (back button + refresh support)
+    if (window.location.hash !== '#' + s) {
+      history.pushState(null, '', '#' + s);
+    }
+  }, []);
+
+  // Back button support: hashchange pe screen restore karo
+  useEffect(() => {
+    function onHashChange() {
+      const hash = window.location.hash.replace('#', '') || 'home';
+      setScreen(hash);
+      setMenu(false);
+    }
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
 
   // Auth + profile (fast: pehle callback par splash hatao)
