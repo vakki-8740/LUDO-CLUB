@@ -407,6 +407,17 @@
         </div>
     </div>
 
+    <!-- ==================== PLAY GAME POPUP (Logo + Play Button → Ludo King Link) ==================== -->
+    <div id="play-game-overlay" class="popup-overlay" onclick="closePopup(event, 'play-game-overlay')">
+        <div class="play-game-box" onclick="event.stopPropagation()">
+            <img src="LUDO KING GAME LOGO/ludo-king-logo.png" alt="Ludo King" class="play-game-logo">
+            <div class="play-game-room">Room Code: <strong id="play-game-room-code">---</strong></div>
+            <a id="play-game-link" href="#" target="_blank" rel="noopener" class="play-game-btn" onclick="document.getElementById('play-game-overlay').style.display='none'">
+                <i class="fas fa-play"></i> Play Now
+            </a>
+        </div>
+    </div>
+
     <!-- ==================== RULES POPUP ==================== -->
     <div id="rules-overlay" class="rules-overlay" onclick="closeRulesPopup()">
         <div class="rules-sheet" onclick="event.stopPropagation()">

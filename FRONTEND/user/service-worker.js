@@ -1,5 +1,5 @@
-const CACHE = 'ludo-royal-club-v3'; // SW fix: POST kabhi cache nahi (TypeError aata tha)
-const URLS = ['index.html', 'app.js', 'pages-content.js', 'style.css', 'firebase-config.js', 'manifest.json', 'PROJECT-KOGO/ludo-royal-club-logo.png', 'icons/icon.svg', 'icons/icon-192.png'];
+const CACHE = 'ludo-royal-club-v5';
+const URLS = ['index.html', 'app.js', 'pages-content.js', 'style.css', 'firebase-config.js', 'manifest.json', 'PROJECT-KOGO/ludo-royal-club-logo.png', 'icons/icon.svg', 'icons/icon-192.png', 'LUDO KING GAME LOGO/ludo-king-logo.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(URLS)));

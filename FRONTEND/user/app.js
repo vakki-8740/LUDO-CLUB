@@ -624,12 +624,21 @@ async function joinBet(betId, amount) {
         currentData.balance = (currentData.balance || 0) - amount;
         updateBalanceUI();
         hideLoading();
-        showToast(`Room Code: ${roomCode} (copied!)`, '#007aff');
-        copyText(roomCode);
+        // Play Game popup dikhao — logo + room code + Ludo King link
+        showPlayGamePopup(roomCode);
     } catch (e) {
         hideLoading();
         showToast('Error: ' + e.message, '#ff3b30');
     }
+}
+
+// Play Game popup: logo + room code + Ludo King redirect link
+function showPlayGamePopup(roomCode) {
+    document.getElementById('play-game-room-code').textContent = roomCode;
+    // Link: room code 8 digits hai to replace karo, nahi to as-is
+    const link = 'https://lk.gggred.com/?rmc=' + roomCode + '&gt=0&po=0';
+    document.getElementById('play-game-link').href = link;
+    document.getElementById('play-game-overlay').style.display = 'flex';
 }
 
 // Refresh button (realtime pehle se live hai — ye manual reload hai)
