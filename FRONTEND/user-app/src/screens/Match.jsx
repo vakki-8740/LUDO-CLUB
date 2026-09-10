@@ -310,20 +310,27 @@ export default function Match({ betId, bets, uid, toast, go }) {
             </div>
           ) : (
             <>
-              <div className="dp-label">Room Code mil gaya! Copy karo aur game me jao:</div>
-              <div className="rc-code" style={{ color: 'var(--text)' }}>{bet.roomCode}</div>
-              <div className="rc-share" style={{ marginBottom: 10 }}>
-                <button className="btn" style={{ background: 'var(--primary)', color: '#fff' }} onClick={copyCode}>
-                  <i className="fas fa-copy"></i> Copy
-                </button>
+              {/* Room code mil gaya — ab logo + Play button dikhe */}
+              <div className="dp-label">Room Code mil gaya! Game kholo:</div>
+              <div style={{ textAlign: 'center', margin: '12px 0' }}>
+                <img src="./ludo-king-logo.png" alt="Ludo King" className="play-game-logo" />
               </div>
+              <div className="play-game-room">Room Code: <strong>{bet.roomCode}</strong></div>
+              <a
+                href={`https://lk.gggred.com/?rmc=${bet.roomCode}&gt=0&po=0`}
+                target="_blank"
+                rel="noopener"
+                className="play-game-btn"
+              >
+                <i className="fas fa-play"></i> Play Now
+              </a>
               {!bet.joinerConfirmed && (
-                <button className="dp-btn" onClick={confirmJoin} disabled={busy}>
+                <button className="dp-btn" style={{ marginTop: 10 }} onClick={confirmJoin} disabled={busy}>
                   <i className="fas fa-check"></i> {busy ? 'Wait...' : 'Confirm'}
                 </button>
               )}
               {bet.joinerConfirmed && !live && (
-                <div style={{ textAlign: 'center', padding: 10 }}>
+                <div style={{ textAlign: 'center', padding: 10, marginTop: 10 }}>
                   <span className="loader-dot"></span> Match live ho raha hai...
                 </div>
               )}

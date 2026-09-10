@@ -9,7 +9,6 @@ export default function Lobby({ bets, profile, uid, toast, go }) {
   const [q, setQ] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [playGame, setPlayGame] = useState(null); // { roomCode, betId }
 
   const filtered = useMemo(() => {
     const s = q.toLowerCase().trim();
@@ -99,9 +98,8 @@ export default function Lobby({ bets, profile, uid, toast, go }) {
           matchedAt: serverTimestamp()
         });
       });
-      // Play Game popup dikhao — logo + room code + Ludo King link
-      const roomCode = bet.roomCode || 'PENDING';
-      setPlayGame({ roomCode, betId: bet.id });
+      // Match page pe jao — wahan room code aane pe Play button dikhega
+      go('match:' + bet.id);
     } catch (e) {
       toast('Error: ' + e.message, '#ff3b30');
     } finally {
@@ -207,25 +205,6 @@ export default function Lobby({ bets, profile, uid, toast, go }) {
       </div>
 
       {showCreate && <CreateBetPopup onClose={() => setShowCreate(false)} onSubmit={submitBet} />}
-
-      {/* Play Game Popup — Logo + Room Code + Ludo King Link */}
-      {playGame && (
-        <div className="popup-overlay" style={{ display: 'flex' }} onClick={() => setPlayGame(null)}>
-          <div className="play-game-box" onClick={(e) => e.stopPropagation()}>
-            <img src="./ludo-king-logo.png" alt="Ludo King" className="play-game-logo" />
-            <div className="play-game-room">Room Code: <strong>{playGame.roomCode}</strong></div>
-            <a
-              href={`https://lk.gggred.com/?rmc=${playGame.roomCode}&gt=0&po=0`}
-              target="_blank"
-              rel="noopener"
-              className="play-game-btn"
-              onClick={() => { setPlayGame(null); go('match:' + playGame.betId); }}
-            >
-              <i className="fas fa-play"></i> Play Now
-            </a>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
