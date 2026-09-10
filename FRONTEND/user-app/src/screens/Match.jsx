@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, increment, limit, query, runTransaction, serverTimestamp, updateDoc, where } from 'firebase/firestore';
+import { addDoc, collection, doc, getDoc, getDocs, limit, query, runTransaction, serverTimestamp, updateDoc, where } from 'firebase/firestore';
 import { db } from '../firebase.js';
 import { compressPhoto, prizeFor, PLATFORM_FEE_PCT } from '../lib.js';
 import { TopBar } from '../components/ui.jsx';
@@ -29,8 +29,10 @@ export default function Match({ betId, bets, uid, toast, go }) {
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [proof, setProof] = useState(null);
+  const [proofPreview, setProofPreview] = useState(null);
   const [claim, setClaim] = useState(null);
   const [showCancelPopup, setShowCancelPopup] = useState(false);
+  const [showWinPopup, setShowWinPopup] = useState(false);
 
   const bet = bets.find((b) => b.id === betId);
   if (!bet) {
@@ -159,22 +161,16 @@ export default function Match({ betId, bets, uid, toast, go }) {
     }
   }
 
-  // Cancel bet: paisa wapas + bet delete
+  // Cancel bet: sirf status change, balance refund admin karega
   async function cancelBet() {
     setBusy(true);
     try {
-      // Dono players ka paisa wapas karo
-      const updates = [];
-      if (bet.creatorId) {
-        updates.push(updateDoc(doc(db, 'users', bet.creatorId), { balance: increment(bet.amount || 0) }));
-      }
-      if (bet.joinerId) {
-        updates.push(updateDoc(doc(db, 'users', bet.joinerId), { balance: increment(bet.amount || 0) }));
-      }
-      await Promise.all(updates);
-      // Bet delete karo
-      await deleteDoc(doc(db, 'bets', bet.id));
-      toast('Bet cancel ho gayi. Paisa wapas mil gaya! ✅', '#34c759');
+      await updateDoc(doc(db, 'bets', bet.id), {
+        status: 'cancelled',
+        cancelledBy: uid,
+        cancelledAt: serverTimestamp()
+      });
+      toast('Bet cancel ho gayi. Admin paisa wapas karega.', '#34c759');
       setShowCancelPopup(false);
       go('lobby');
     } catch (e) {
@@ -281,7 +277,7 @@ export default function Match({ betId, bets, uid, toast, go }) {
             <button
               className="dp-btn"
               style={{ background: 'var(--success)', flex: 1 }}
-              onClick={() => document.getElementById('win-file-input').click()}
+              onClick={() => setShowWinPopup(true)}
               disabled={busy}
             >
               <i className="fas fa-trophy"></i> I WIN
@@ -295,36 +291,6 @@ export default function Match({ betId, bets, uid, toast, go }) {
               <i className="fas fa-thumbs-down"></i> I LOSS
             </button>
           </div>
-          <input
-            id="win-file-input"
-            type="file"
-            accept="image/*"
-            style={{ display: 'none' }}
-            onChange={(e) => {
-              const f = e.target.files && e.target.files[0];
-              if (!f) return;
-              setProof(f);
-            }}
-          />
-
-          {/* Proof selected dikhao */}
-          {proof && !claim && (
-            <div style={{ marginTop: 12, padding: 10, background: '#f0fff4', borderRadius: 10, border: '1px solid var(--success)' }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--success)', marginBottom: 8 }}>
-                <i className="fas fa-check-circle"></i> Screenshot selected: {proof.name}
-              </div>
-              <button className="dp-btn" onClick={iWin} disabled={busy || !proof}>
-                <i className="fas fa-paper-plane"></i> {busy ? 'Bheja ja raha hai...' : 'Proof Bhejo'}
-              </button>
-              <button
-                className="dp-btn"
-                style={{ background: 'var(--text-muted)', marginTop: 8 }}
-                onClick={() => setProof(null)}
-              >
-                Cancel
-              </button>
-            </div>
-          )}
 
           {/* Claim status */}
           {claim && claim.status === 'pending' && (
@@ -452,6 +418,59 @@ export default function Match({ betId, bets, uid, toast, go }) {
               onClick={() => setShowCancelPopup(false)}
             >
               Wapas Jao
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ========== WIN PROOF POPUP ========== */}
+      {showWinPopup && (
+        <div className="popup-overlay" style={{ display: 'flex' }} onClick={() => { setShowWinPopup(false); setProof(null); setProofPreview(null); }}>
+          <div className="popup" onClick={(e) => e.stopPropagation()}>
+            <div className="popup-header">
+              <i className="fas fa-trophy" style={{ color: 'var(--success)', marginRight: 8 }}></i>
+              Win Proof Bhejo
+            </div>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', marginBottom: 14, lineHeight: 1.5 }}>
+              Jeet ka screenshot lagao aur proof bhejo
+            </p>
+
+            {/* Image Preview */}
+            {proofPreview && (
+              <div style={{ textAlign: 'center', marginBottom: 12 }}>
+                <img src={proofPreview} alt="Preview" style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 10, border: '2px solid var(--success)' }} />
+              </div>
+            )}
+
+            {/* File Input Button */}
+            <label className="dp-btn" style={{ background: proof ? 'var(--success)' : 'var(--warning)', marginBottom: 10, cursor: 'pointer' }}>
+              <i className={`fas ${proof ? 'fa-check-circle' : 'fa-camera'}`}></i> {proof ? 'Screenshot Selected' : 'Select Screenshot'}
+              <input
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const f = e.target.files && e.target.files[0];
+                  if (!f) return;
+                  setProof(f);
+                  // Preview banao
+                  const reader = new FileReader();
+                  reader.onload = (ev) => setProofPreview(ev.target.result);
+                  reader.readAsDataURL(f);
+                }}
+              />
+            </label>
+
+            {/* Send + Cancel */}
+            <button className="dp-btn" onClick={iWin} disabled={busy || !proof}>
+              <i className="fas fa-paper-plane"></i> {busy ? 'Bheja ja raha hai...' : 'Proof Bhejo'}
+            </button>
+            <button
+              className="dp-btn"
+              style={{ background: 'var(--text-muted)', marginTop: 8 }}
+              onClick={() => { setShowWinPopup(false); setProof(null); setProofPreview(null); }}
+            >
+              Cancel
             </button>
           </div>
         </div>
