@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { addDoc, collection, doc, getDoc, getDocs, limit, query, runTransaction, serverTimestamp, updateDoc, where } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, increment, limit, query, runTransaction, serverTimestamp, updateDoc, where } from 'firebase/firestore';
 import { db } from '../firebase.js';
 import { compressPhoto, prizeFor, PLATFORM_FEE_PCT } from '../lib.js';
 import { TopBar } from '../components/ui.jsx';
@@ -24,13 +24,13 @@ function fmtTime(ts) {
   return '--';
 }
 
-// Match page: room-code exchange -> dono confirm -> LIVE
-// Creator: room code bharega. Joiner: code milega + copy + confirm.
+// Match page: room-code exchange -> dono confirm -> LIVE -> I WIN / I LOSS
 export default function Match({ betId, bets, uid, toast, go }) {
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [proof, setProof] = useState(null);
-  const [claim, setClaim] = useState(null); // meri is match ki claim
+  const [claim, setClaim] = useState(null);
+  const [showCancelPopup, setShowCancelPopup] = useState(false);
 
   const bet = bets.find((b) => b.id === betId);
   if (!bet) {
@@ -46,10 +46,10 @@ export default function Match({ betId, bets, uid, toast, go }) {
 
   const isCreator = bet.creatorId === uid;
   const oppName = isCreator ? bet.joinerName : bet.creatorName;
-  const oppLogo = isCreator ? bet.joinerLogo : bet.creatorLogo;
   const live = bet.status === 'playing';
+  const completed = bet.status === 'completed';
 
-  // Meri is match ki claim lao (ek match = ek claim)
+  // Meri is match ki claim lao
   useEffect(() => {
     getDocs(query(
       collection(db, 'win_claims'),
@@ -93,9 +93,9 @@ export default function Match({ betId, bets, uid, toast, go }) {
     }
   }
 
-  // WIN PROOF bhejo: 1 screenshot Telegram (UID ke saath) + request admin ko
-  async function sendWinProof() {
-    if (!proof) return toast('Win screenshot lagao', '#ff3b30');
+  // I WIN: proof image manga + Telegram pe bheja
+  async function iWin() {
+    if (!proof) return toast('Pehle win screenshot lagao', '#ff3b30');
     if (claim && claim.status === 'pending') return toast('Proof pehle se bheja hai', '#ff9500');
     setBusy(true);
     try {
@@ -113,15 +113,24 @@ export default function Match({ betId, bets, uid, toast, go }) {
         '🎉 CONGRATULATIONS! 🎉\n' +
         '━━━━━━━━━━━━━━━━━━';
       await sendProofToTelegram(cfg.botToken, cfg.chatId, small, caption);
+      // Claim record banao
       const ref = await addDoc(collection(db, 'win_claims'), {
         betId: bet.id,
         userId: uid,
-        userName: (bet.creatorId === uid ? bet.creatorName : bet.joinerName) || 'Player',
+        userName: (isCreator ? bet.creatorName : bet.joinerName) || 'Player',
         betAmount: bet.amount || 0,
+        result: 'win',
         status: 'pending',
         timestamp: serverTimestamp()
       });
       setClaim({ id: ref.id, status: 'pending' });
+      // Bet ko completed mein move karo
+      await updateDoc(doc(db, 'bets', bet.id), {
+        status: 'completed',
+        result: 'win',
+        completedBy: uid,
+        completedAt: serverTimestamp()
+      });
       setProof(null);
       toast('Proof bheja gaya! Approve hote hi payment milega.', '#34c759');
     } catch (e) {
@@ -131,7 +140,51 @@ export default function Match({ betId, bets, uid, toast, go }) {
     }
   }
 
-  // WIN PROOF cancel (dobara bhej sakte ho)
+  // I LOSS: seedha completed mein move karo
+  async function iLoss() {
+    if (!confirm('Tum haar gaye? Bet complete ho jayegi.')) return;
+    setBusy(true);
+    try {
+      await updateDoc(doc(db, 'bets', bet.id), {
+        status: 'completed',
+        result: 'loss',
+        completedBy: uid,
+        completedAt: serverTimestamp()
+      });
+      toast('Bet complete hui. Better luck next time! 🍀', '#ff9500');
+    } catch (e) {
+      toast('Error: ' + e.message, '#ff3b30');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Cancel bet: paisa wapas + bet delete
+  async function cancelBet() {
+    setBusy(true);
+    try {
+      // Dono players ka paisa wapas karo
+      const updates = [];
+      if (bet.creatorId) {
+        updates.push(updateDoc(doc(db, 'users', bet.creatorId), { balance: increment(bet.amount || 0) }));
+      }
+      if (bet.joinerId) {
+        updates.push(updateDoc(doc(db, 'users', bet.joinerId), { balance: increment(bet.amount || 0) }));
+      }
+      await Promise.all(updates);
+      // Bet delete karo
+      await deleteDoc(doc(db, 'bets', bet.id));
+      toast('Bet cancel ho gayi. Paisa wapas mil gaya! ✅', '#34c759');
+      setShowCancelPopup(false);
+      go('lobby');
+    } catch (e) {
+      toast('Error: ' + e.message, '#ff3b30');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // WIN PROOF cancel
   async function cancelProof() {
     if (!claim || !claim.id) return;
     if (!confirm('Win proof request cancel karein?')) return;
@@ -148,32 +201,11 @@ export default function Match({ betId, bets, uid, toast, go }) {
     }
   }
 
-  // Joiner: confirm dabao -> dono confirm to LIVE
-  async function confirmJoin() {
-    setBusy(true);
-    try {
-      await runTransaction(db, async (tx) => {
-        const snap = await tx.get(doc(db, 'bets', bet.id));
-        if (!snap.exists()) throw new Error('Match nahi mila');
-        const d = snap.data();
-        if (!d.roomCode) throw new Error('Room code abhi nahi aaya. Thoda ruko.');
-        const upd = { joinerConfirmed: true };
-        if (d.creatorConfirmed) upd.status = 'playing';
-        tx.update(doc(db, 'bets', bet.id), upd);
-      });
-      toast('Confirmed! Good luck 🍀', '#34c759');
-    } catch (e) {
-      toast('Error: ' + e.message, '#ff3b30');
-    } finally {
-      setBusy(false);
-    }
-  }
-
   return (
     <div className="section active">
       <TopBar title="Match" onBack={() => go('lobby')} />
 
-      {/* Amount + timing + opponent — dono ko same dikhta hai */}
+      {/* Amount + timing + opponent */}
       <div className="wallet-card" style={{ textAlign: 'center' }}>
         <div className="wallet-label">Bet Amount</div>
         <div className="wallet-amount">₹{bet.amount || 0}</div>
@@ -182,6 +214,7 @@ export default function Match({ betId, bets, uid, toast, go }) {
         </div>
       </div>
 
+      {/* Player VS Card */}
       <div className="bet-card-new playing">
         <div className="bet-card-top">
           <div className="bet-user">
@@ -200,70 +233,121 @@ export default function Match({ betId, bets, uid, toast, go }) {
             <div className="bet-user-name">{bet.joinerName || 'Player'}</div>
           </div>
         </div>
-        <div className={`bet-status-badge ${live ? 'playing' : ''}`}>
-          {live ? 'LIVE NOW' : 'ROOM CODE EXCHANGE'}
+        <div className={`bet-status-badge ${live ? 'playing' : completed ? 'completed' : ''}`}>
+          {live ? 'LIVE NOW' : completed ? 'COMPLETED' : 'ROOM CODE EXCHANGE'}
         </div>
       </div>
 
-      {live ? (
+      {/* ========== COMPLETED STATE ========== */}
+      {completed && (
         <div className="deposit-page-card" style={{ textAlign: 'center' }}>
-          <div className="dp-label">User vs User match shuru! Game me jao aur khelo 🍀</div>
+          <div style={{ fontSize: 40, marginBottom: 10 }}>
+            {bet.result === 'win' ? '🏆' : '😔'}
+          </div>
+          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>
+            {bet.result === 'win' ? 'Tum Jeete!' : 'Tum Haare!'}
+          </div>
+          {bet.result === 'win' && claim && (
+            <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+              {claim.status === 'pending' && 'Proof review mein hai — approve hone tak wait karo...'}
+              {claim.status === 'approved' && <span style={{ color: 'var(--success)', fontWeight: 700 }}>Proof approved! Payment admin karega.</span>}
+              {claim.status === 'rejected' && <span style={{ color: 'var(--danger)' }}>Proof rejected. Dobara bhejo.</span>}
+            </div>
+          )}
+          <button className="dp-btn" style={{ marginTop: 14, background: 'var(--primary)' }} onClick={() => go('lobby')}>
+            <i className="fas fa-arrow-left"></i> Lobby pe jao
+          </button>
+        </div>
+      )}
+
+      {/* ========== LIVE STATE ========== */}
+      {live && (
+        <div className="deposit-page-card" style={{ textAlign: 'center' }}>
+          <div className="dp-label">Match LIVE hai! Game me jao aur khelo 🍀</div>
           <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 8 }}>
             Jeetne wale ko: <strong style={{ color: 'var(--success)', fontSize: 16 }}>₹{prizeFor(bet.amount)}</strong>
             <br />({PLATFORM_FEE_PCT}% platform fee cut ke baad)
           </div>
           {bet.roomCode && (
-            <div className="rc-code" style={{ color: 'var(--text)' }}>
-              {bet.roomCode}
-            </div>
+            <div className="rc-code" style={{ color: 'var(--text)' }}>{bet.roomCode}</div>
           )}
-          <button className="dp-btn" style={{ background: 'var(--primary)' }} onClick={copyCode}>
+          <button className="dp-btn" style={{ background: 'var(--primary)', marginBottom: 12 }} onClick={copyCode}>
             <i className="fas fa-copy"></i> Copy Room Code
           </button>
 
-          {/* WIN PROOF: jeet ka 1 screenshot — Telegram + admin approve, phir payment */}
-          <div className="dp-divider" style={{ marginTop: 18 }}><span>jeet gaye? proof bhejo</span></div>
-          {!claim || claim.status === 'rejected' || claim.status === 'cancelled' ? (
-            <>
-              {/* Preview NAHI — sirf selected tick + naam */}
-              <label className="dp-btn" style={{ background: proof ? 'var(--success)' : 'var(--warning)', marginBottom: 10 }}>
-                <i className={`fas ${proof ? 'fa-check-circle' : 'fa-camera'}`}></i> {proof ? `Selected: ${proof.name}` : 'Win Screenshot Lagao'}
-                <input
-                  type="file"
-                  accept="image/*"
-                  style={{ display: 'none' }}
-                  onChange={(e) => {
-                    const f = e.target.files && e.target.files[0];
-                    if (!f) return;
-                    setProof(f);
-                  }}
-                />
-              </label>
-              <button className="dp-btn" onClick={sendWinProof} disabled={busy || !proof}>
-                <i className="fas fa-trophy"></i> {busy ? 'Bheja ja raha hai...' : 'Proof Bhejo'}
+          {/* I WIN / I LOSS buttons */}
+          <div className="dp-divider"><span>Game khatam hua?</span></div>
+          <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+            <button
+              className="dp-btn"
+              style={{ background: 'var(--success)', flex: 1 }}
+              onClick={() => document.getElementById('win-file-input').click()}
+              disabled={busy}
+            >
+              <i className="fas fa-trophy"></i> I WIN
+            </button>
+            <button
+              className="dp-btn"
+              style={{ background: 'var(--danger)', flex: 1 }}
+              onClick={iLoss}
+              disabled={busy}
+            >
+              <i className="fas fa-thumbs-down"></i> I LOSS
+            </button>
+          </div>
+          <input
+            id="win-file-input"
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const f = e.target.files && e.target.files[0];
+              if (!f) return;
+              setProof(f);
+            }}
+          />
+
+          {/* Proof selected dikhao */}
+          {proof && !claim && (
+            <div style={{ marginTop: 12, padding: 10, background: '#f0fff4', borderRadius: 10, border: '1px solid var(--success)' }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--success)', marginBottom: 8 }}>
+                <i className="fas fa-check-circle"></i> Screenshot selected: {proof.name}
+              </div>
+              <button className="dp-btn" onClick={iWin} disabled={busy || !proof}>
+                <i className="fas fa-paper-plane"></i> {busy ? 'Bheja ja raha hai...' : 'Proof Bhejo'}
               </button>
-            </>
-          ) : claim.status === 'approved' ? (
-            <div style={{ padding: 10, fontSize: 13, fontWeight: 700, color: 'var(--success)' }}>
-              Proof approved! Payment admin karega.
+              <button
+                className="dp-btn"
+                style={{ background: 'var(--text-muted)', marginTop: 8 }}
+                onClick={() => setProof(null)}
+              >
+                Cancel
+              </button>
             </div>
-          ) : (
-            /* PENDING: approve hone tak loading + cancel (cancel ke baad dobara bhej sakte ho) */
-            <div style={{ textAlign: 'center', padding: 10 }}>
-              <span className="loader-dot" style={{ width: 22, height: 22 }}></span>
-              <div style={{ marginTop: 8, fontSize: 13, fontWeight: 700 }}>
+          )}
+
+          {/* Claim status */}
+          {claim && claim.status === 'pending' && (
+            <div style={{ marginTop: 12, padding: 10, background: '#fffbe6', borderRadius: 10 }}>
+              <span className="loader-dot" style={{ width: 18, height: 18 }}></span>
+              <div style={{ marginTop: 6, fontSize: 13, fontWeight: 700 }}>
                 Proof bheja gaya — approve hone tak wait karo...
               </div>
-              <div className="rc-share" style={{ marginTop: 10 }}>
-                <button className="dp-btn" style={{ background: 'var(--danger)' }} onClick={cancelProof} disabled={busy}>
-                  <i className="fas fa-times"></i> {busy ? 'Wait...' : 'Cancel'}
-                </button>
-              </div>
+              <button className="dp-btn" style={{ background: 'var(--danger)', marginTop: 8 }} onClick={cancelProof} disabled={busy}>
+                <i className="fas fa-times"></i> {busy ? 'Wait...' : 'Cancel'}
+              </button>
+            </div>
+          )}
+          {claim && claim.status === 'approved' && (
+            <div style={{ marginTop: 12, fontSize: 13, fontWeight: 700, color: 'var(--success)' }}>
+              Proof approved! Payment admin karega.
             </div>
           )}
         </div>
-      ) : isCreator ? (
-        /* ===== CREATOR SIDE ===== */
+      )}
+
+      {/* ========== ROOM CODE EXCHANGE — CREATOR ========== */}
+      {!live && !completed && isCreator && (
         <div className="deposit-page-card">
           <div className="dp-label">
             Opponent: <strong>{oppName || 'Player'}</strong> tumhare sath khelna chahta hai
@@ -294,9 +378,19 @@ export default function Match({ betId, bets, uid, toast, go }) {
               <span className="loader-dot"></span> Opponent ke confirm ka wait...
             </div>
           )}
+          {/* Cancel option */}
+          <button
+            className="dp-btn"
+            style={{ background: 'var(--danger)', marginTop: 12 }}
+            onClick={() => setShowCancelPopup(true)}
+          >
+            <i className="fas fa-times"></i> Bet Cancel
+          </button>
         </div>
-      ) : (
-        /* ===== JOINER SIDE ===== */
+      )}
+
+      {/* ========== ROOM CODE EXCHANGE — JOINER ========== */}
+      {!live && !completed && !isCreator && (
         <div className="deposit-page-card">
           <div className="dp-label">
             Opponent: <strong>{oppName || 'Player'}</strong> (bet lagane wala)
@@ -310,7 +404,7 @@ export default function Match({ betId, bets, uid, toast, go }) {
             </div>
           ) : (
             <>
-              {/* Room code mil gaya — ab logo + Play button dikhe */}
+              {/* Room code mil gaya — ab logo + Play button dikhe, Confirm NAHI */}
               <div className="dp-label">Room Code mil gaya! Game kholo:</div>
               <div style={{ textAlign: 'center', margin: '12px 0' }}>
                 <img src="./LUDO-KING-GAME-LOGO/ludo-king-game-logo.jpg" alt="Ludo King" className="play-game-logo" />
@@ -324,18 +418,42 @@ export default function Match({ betId, bets, uid, toast, go }) {
               >
                 <i className="fas fa-play"></i> Play Now
               </a>
-              {!bet.joinerConfirmed && (
-                <button className="dp-btn" style={{ marginTop: 10 }} onClick={confirmJoin} disabled={busy}>
-                  <i className="fas fa-check"></i> {busy ? 'Wait...' : 'Confirm'}
-                </button>
-              )}
-              {bet.joinerConfirmed && !live && (
-                <div style={{ textAlign: 'center', padding: 10, marginTop: 10 }}>
-                  <span className="loader-dot"></span> Match live ho raha hai...
-                </div>
-              )}
             </>
           )}
+          {/* Cancel option */}
+          <button
+            className="dp-btn"
+            style={{ background: 'var(--danger)', marginTop: 12 }}
+            onClick={() => setShowCancelPopup(true)}
+          >
+            <i className="fas fa-times"></i> Bet Cancel
+          </button>
+        </div>
+      )}
+
+      {/* ========== CANCEL BET POPUP ========== */}
+      {showCancelPopup && (
+        <div className="popup-overlay" style={{ display: 'flex' }} onClick={() => setShowCancelPopup(false)}>
+          <div className="popup" onClick={(e) => e.stopPropagation()}>
+            <div className="popup-header">
+              <i className="fas fa-exclamation-triangle" style={{ color: 'var(--danger)', marginRight: 8 }}></i>
+              Bet Cancel Karein?
+            </div>
+            <p style={{ fontSize: 14, color: 'var(--text-muted)', textAlign: 'center', marginBottom: 16, lineHeight: 1.6 }}>
+              Kya tum pakka bet cancel karna chahte ho? <br />
+              Dono players ka paisa wapas mil jayega.
+            </p>
+            <button className="btn" style={{ background: 'var(--danger)' }} onClick={cancelBet} disabled={busy}>
+              <i className="fas fa-times"></i> {busy ? 'Cancel ho raha hai...' : 'Haan, Cancel Karo'}
+            </button>
+            <button
+              className="btn"
+              style={{ background: 'var(--text-muted)', marginTop: 10 }}
+              onClick={() => setShowCancelPopup(false)}
+            >
+              Wapas Jao
+            </button>
+          </div>
         </div>
       )}
     </div>
