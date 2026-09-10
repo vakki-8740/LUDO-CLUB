@@ -112,16 +112,7 @@ export default function Lobby({ bets, profile, uid, toast, go }) {
       <div className="top-bar">
         <i className="fas fa-arrow-left" onClick={() => go('home')} style={{ fontSize: 20, cursor: 'pointer' }}></i>
         <span>Game Lobby</span>
-        <button
-          className="create-btn-sm"
-          disabled={busy}
-          onClick={() => {
-            if ((profile.balance || 0) <= 0) return toast('Add money to wallet first!', '#ff9500');
-            setShowCreate(true);
-          }}
-        >
-          <i className="fas fa-plus"></i> Create Bet
-        </button>
+        <span></span>
       </div>
 
       <div className="search-bar">
@@ -130,6 +121,16 @@ export default function Lobby({ bets, profile, uid, toast, go }) {
         {q && (
           <i className="fas fa-times search-clear" onClick={() => setQ('')} style={{ cursor: 'pointer', color: 'var(--text-muted)' }}></i>
         )}
+        <button
+          className="search-set-btn"
+          disabled={busy}
+          onClick={() => {
+            if ((profile.balance || 0) <= 0) return toast('Add money to wallet first!', '#ff9500');
+            setShowCreate(true);
+          }}
+        >
+          SET
+        </button>
       </div>
 
       <div className="lobby-section-title">
