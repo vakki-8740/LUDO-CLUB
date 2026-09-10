@@ -313,7 +313,7 @@ export default function Match({ betId, bets, uid, toast, go }) {
               {/* Room code mil gaya — ab logo + Play button dikhe */}
               <div className="dp-label">Room Code mil gaya! Game kholo:</div>
               <div style={{ textAlign: 'center', margin: '12px 0' }}>
-                <img src="./ludo-king-logo.png" alt="Ludo King" className="play-game-logo" />
+                <img src="./LUDO-KING-GAME-LOGO/ludo-king-game-logo.jpg" alt="Ludo King" className="play-game-logo" />
               </div>
               <div className="play-game-room">Room Code: <strong>{bet.roomCode}</strong></div>
               <a
