@@ -34,7 +34,7 @@ export default function Deposit({ profile, uid, toast, go }) {
   }, []);
 
   function selectAmount(amt) {
-    go('payutr:' + amt);
+    go('payqr:' + amt);
   }
 
   return (
@@ -52,7 +52,7 @@ export default function Deposit({ profile, uid, toast, go }) {
             <div className="dp-chips">
               {amounts.map((amt) => (
                 <div key={amt} className="dp-chip" onClick={() => selectAmount(amt)}>
-                  Rs.{amt}
+                  ₹{amt}
                 </div>
               ))}
             </div>
@@ -68,7 +68,7 @@ export default function Deposit({ profile, uid, toast, go }) {
   );
 }
 
-// Pay UTR Flow: Amount select → Payment link → UTR submit → Auto verify
+// PayQr: Payment flow with UTR
 export function PayQr({ amount, profile, uid, toast, go }) {
   const [step, setStep] = useState('info');
   const [payLinks, setPayLinks] = useState({});
@@ -97,7 +97,7 @@ export function PayQr({ amount, profile, uid, toast, go }) {
       window.open(link, '_blank');
       setStep('utr');
     } else {
-      toast('Payment link set nahi hai', '#ff3b30');
+      toast('Payment link set nahi hai. Admin se contact karo.', '#ff3b30');
     }
   }
 
@@ -135,6 +135,7 @@ export function PayQr({ amount, profile, uid, toast, go }) {
     }
   }
 
+  // SUCCESS
   if (step === 'success') {
     return (
       <div className="section active">
@@ -142,7 +143,7 @@ export function PayQr({ amount, profile, uid, toast, go }) {
         <div className="deposit-page-card" style={{ textAlign: 'center', padding: '40px 20px' }}>
           <div style={{ fontSize: 60, marginBottom: 16 }}>&#9989;</div>
           <div style={{ fontSize: 20, fontWeight: 800, color: '#34c759', marginBottom: 8 }}>Payment Verified!</div>
-          <div style={{ fontSize: 14, color: '#86868b', marginBottom: 8 }}>Rs.{amount} wallet mein add ho gaya</div>
+          <div style={{ fontSize: 14, color: '#86868b', marginBottom: 8 }}>₹{amount} wallet mein add ho gaya</div>
           <div style={{ fontSize: 12, color: '#636366', marginBottom: 20 }}>UTR: {utr}</div>
           <button className="dp-btn" onClick={() => go('wallet')}>
             <i className="fas fa-wallet"></i> Wallet pe jao
@@ -152,6 +153,7 @@ export function PayQr({ amount, profile, uid, toast, go }) {
     );
   }
 
+  // PENDING
   if (step === 'pending') {
     return (
       <div className="section active">
@@ -171,6 +173,7 @@ export function PayQr({ amount, profile, uid, toast, go }) {
     );
   }
 
+  // UTR INPUT
   if (step === 'utr') {
     return (
       <div className="section active">
@@ -182,7 +185,7 @@ export function PayQr({ amount, profile, uid, toast, go }) {
             Payment karne ke baad UPI app mein transaction details mein 12 digit ka UTR hota hai
           </div>
           <div style={{ fontSize: 13, color: '#86868b', marginBottom: 16 }}>
-            Amount: Rs.{amount}
+            Amount: ₹{amount}
           </div>
           <input
             type="text"
@@ -207,18 +210,20 @@ export function PayQr({ amount, profile, uid, toast, go }) {
     );
   }
 
-  // Step: info (Payment instructions)
+  // INFO (Payment page)
+  const hasLink = payLinks && payLinks[String(amount)];
+
   return (
     <div className="section active">
-      <TopBar title={'Pay Rs.' + amount} onBack={() => go('wallet')} />
+      <TopBar title={'Pay ₹' + amount} onBack={() => go('wallet')} />
       <div className="deposit-page-card" style={{ textAlign: 'center', padding: '30px 20px' }}>
-        <div style={{ fontSize: 32, fontWeight: 800, color: '#007aff', marginBottom: 4 }}>Rs.{amount}</div>
+        <div style={{ fontSize: 36, fontWeight: 800, color: '#007aff', marginBottom: 4 }}>₹{amount}</div>
         {txnid && <div style={{ fontSize: 11, color: '#636366', marginBottom: 16 }}>Order: {txnid}</div>}
 
         <div style={{ background: '#1c1c1e', borderRadius: 16, padding: 16, marginBottom: 16, textAlign: 'left' }}>
           <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>Steps:</div>
           <div style={{ fontSize: 13, color: '#86868b', lineHeight: 2.2 }}>
-            1. Neeche "Pay" button dabao<br/>
+            1. "Pay" button dabao<br/>
             2. Payment page pe pay karo<br/>
             3. UPI app se pay karo (GPay/PhonePe/Paytm)<br/>
             4. Wapas aao aur UTR dalo<br/>
@@ -226,9 +231,18 @@ export function PayQr({ amount, profile, uid, toast, go }) {
           </div>
         </div>
 
-        <button className="dp-btn" onClick={openPaymentLink} style={{ fontSize: 16 }}>
-          <i className="fas fa-external-link-alt"></i> Pay Rs.{amount}
-        </button>
+        {hasLink ? (
+          <button className="dp-btn" onClick={openPaymentLink} style={{ fontSize: 16 }}>
+            <i className="fas fa-external-link-alt"></i> Pay ₹{amount}
+          </button>
+        ) : (
+          <div style={{ padding: 12, background: '#fff3f3', borderRadius: 10, marginBottom: 12 }}>
+            <div style={{ fontSize: 13, color: '#ff3b30', fontWeight: 600 }}>
+              Payment link set nahi hai. Admin se contact karo.
+            </div>
+          </div>
+        )}
+
         <button className="dp-btn" style={{ background: '#636366', marginTop: 10 }} onClick={() => go('wallet')}>
           Cancel
         </button>
