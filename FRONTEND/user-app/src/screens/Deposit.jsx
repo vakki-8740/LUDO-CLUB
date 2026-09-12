@@ -4,7 +4,7 @@ import { db } from '../firebase.js';
 import { todayStr } from '../lib.js';
 import { TopBar } from '../components/ui.jsx';
 
-const FALLBACK_AMOUNTS = [100, 200, 300, 400, 500, 1000, 2000, 3000, 4000, 5000];
+const FALLBACK_AMOUNTS = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000];
 const BACKEND_URL = 'https://ludo-club-bacend.onrender.com';
 
 export default function Deposit({ profile, uid, toast, go }) {
@@ -27,7 +27,7 @@ export default function Deposit({ profile, uid, toast, go }) {
 
   async function next() {
     const amt = parseInt(custom);
-    let minDep = 100;
+    let minDep = 1;
     try {
       const d = await getDoc(doc(db, 'settings', 'app'));
       if (d.exists() && d.data().minDeposit) minDep = parseFloat(d.data().minDeposit);
@@ -55,7 +55,7 @@ export default function Deposit({ profile, uid, toast, go }) {
         <div className="dp-divider"><span>or enter custom amount</span></div>
         <div className="dp-custom">
           <span className="dp-rupee">₹</span>
-          <input type="number" placeholder="Enter amount (min ₹100)" value={custom} onChange={(e) => setCustom(e.target.value)} />
+          <input type="number" placeholder="Enter amount (min ₹1)" value={custom} onChange={(e) => setCustom(e.target.value)} />
         </div>
         <button className="dp-btn" onClick={next}>
           <i className="fas fa-arrow-right"></i> Next

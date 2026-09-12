@@ -10,7 +10,7 @@ require __DIR__ . '/firebase.php';
 $cfg = fb_cfg();
 fb_cors($cfg);
 
-$ALLOWED = [100, 200, 300, 400, 500, 1000, 2000, 5000];
+$ALLOWED = [1, 2, 5, 10, 20, 50, 100, 200, 300, 400, 500, 1000, 2000, 5000];
 
 try {
     if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') throw new Exception('POST only');
