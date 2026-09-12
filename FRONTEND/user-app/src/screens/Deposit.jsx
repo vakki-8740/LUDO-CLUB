@@ -5,7 +5,7 @@ import { todayStr } from '../lib.js';
 import { TopBar } from '../components/ui.jsx';
 
 const FALLBACK_AMOUNTS = [100, 200, 300, 400, 500, 1000, 2000, 3000, 4000, 5000];
-const BACKEND_URL = 'https://ludo-royal-club.onrender.com'; // PHP backend URL
+const BACKEND_URL = 'https://ludo-club-bacend.onrender.com';
 
 export default function Deposit({ profile, uid, toast, go }) {
   const [amounts, setAmounts] = useState(FALLBACK_AMOUNTS);
