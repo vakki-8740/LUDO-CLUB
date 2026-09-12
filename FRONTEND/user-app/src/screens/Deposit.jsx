@@ -97,7 +97,7 @@ export function PayQr({ amount, profile, uid, toast, go }) {
       setTxnid(data.txnid);
 
       // UPI QR code generate karo
-      const upiId = '13764891@payu'; // PayU merchant UPI
+      const upiId = '8690473929-2@ybl'; // Merchant UPI
       const qrUrl = `upi://pay?pa=${upiId}&pn=Ludo Royal Club&am=${amount}&tn=Deposit ${data.txnid}&cu=INR`;
       setQrData(qrUrl);
 
