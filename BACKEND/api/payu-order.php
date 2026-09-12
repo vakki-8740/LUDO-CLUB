@@ -49,6 +49,8 @@ try {
     $hashStr = implode('|', [$key, $txnid, $amount, $productinfo, $userName, $email, '', '', '', '', '', '', '', '', '', $salt]);
     $hash = strtolower(hash('sha512', $hashStr));
 
+    $backend = rtrim($cfg['backend_base'] ?? '', '/');
+    if ($backend === '') $backend = rtrim($front, '/');
     echo json_encode([
         'success'   => true,
         'txnId'     => $txnid,
@@ -61,8 +63,8 @@ try {
             'firstname'   => $userName,
             'email'       => $email,
             'phone'       => $phone,
-            'surl'        => $front . '/?pay=' . $txnid . '&st=ok',
-            'furl'        => $front . '/?pay=' . $txnid . '&st=fail',
+            'surl'        => $backend . '/payu-return.php?st=ok',
+            'furl'        => $backend . '/payu-return.php?st=fail',
             'hash'        => $hash,
         ],
     ]);

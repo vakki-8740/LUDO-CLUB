@@ -27,6 +27,7 @@ function fb_cfg() {
         'firebase_project_id' => $env('FIREBASE_PROJECT_ID', ''),
         'firebase_service_json' => $env('FIREBASE_SERVICE_JSON', '{}'),
         'frontend_base'       => $env('FRONTEND_BASE', ''),
+        'backend_base'        => $env('BACKEND_BASE', ''),
         'allowed_origins'     => $env('ALLOWED_ORIGINS', ''),
     ];
 }
