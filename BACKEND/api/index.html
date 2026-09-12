@@ -30,8 +30,9 @@
   <div class="badge ok" id="main-badge">CHECKING...</div>
 
   <div class="row"><b>PHP Files</b><span id="t-php">checking...</span></div>
-  <div class="row"><b>create-qr.php</b><span id="t-qr">checking...</span></div>
-  <div class="row"><b>webhook.php</b><span id="t-wh">checking...</span></div>
+  <div class="row"><b>payu-order.php</b><span id="t-order">checking...</span></div>
+  <div class="row"><b>submit-utr.php</b><span id="t-utr">checking...</span></div>
+  <div class="row"><b>payu-return.php</b><span id="t-ret">checking...</span></div>
 
   <button onclick="runCheck()">Recheck Status</button>
   <div class="time" id="t-time"></div>
@@ -52,21 +53,28 @@ async function runCheck() {
   set('t-php', 'checking...', ''); set('t-qr', 'checking...', ''); set('t-wh', 'checking...', '');
   let okCount = 0;
 
-  // create-qr.php GET par "POST only" JSON deta hai = PHP + file OK
+  // payu-order.php GET par "POST only" JSON deta hai = PHP + file OK
   try {
-    const r = await fetch('create-qr.php');
+    const r = await fetch('payu-order.php');
     const j = await r.json();
-    if (j.error && j.error.includes('POST only')) { set('t-qr', 'OK (file live)', true); okCount++; }
-    else { set('t-qr', 'FAIL: ajeeb jawab', false); }
-  } catch (e) { set('t-qr', 'FAIL: file nahi mili', false); }
+    if (j.error && j.error.includes('POST only')) { set('t-order', 'OK (file live)', true); okCount++; }
+    else { set('t-order', 'FAIL: ajeeb jawab', false); }
+  } catch (e) { set('t-order', 'FAIL: file nahi mili', false); }
 
-  // webhook.php bina signature ke 400 JSON deta hai = file OK
+  // submit-utr.php GET par "POST only" JSON deta hai = file OK
   try {
-    const r = await fetch('webhook.php', { method: 'POST', body: '{}' });
+    const r = await fetch('submit-utr.php');
     const j = await r.json();
-    if (j.error) { set('t-wh', 'OK (file live)', true); okCount++; }
-    else { set('t-wh', 'FAIL: ajeeb jawab', false); }
-  } catch (e) { set('t-wh', 'FAIL: file nahi mili', false); }
+    if (j.error && j.error.includes('POST only')) { set('t-utr', 'OK (file live)', true); okCount++; }
+    else { set('t-utr', 'FAIL: ajeeb jawab', false); }
+  } catch (e) { set('t-utr', 'FAIL: file nahi mili', false); }
+
+  // payu-return.php bina data ke error deta hai = file OK
+  try {
+    const r = await fetch('payu-return.php');
+    if (r.ok || r.status === 400) { set('t-ret', 'OK (file live)', true); okCount++; }
+    else { set('t-ret', 'FAIL', false); }
+  } catch (e) { set('t-ret', 'FAIL: file nahi mili', false); }
 
   if (okCount === 2) { set('t-php', 'OK (PHP chal raha)', true); }
   else { set('t-php', okCount === 1 ? 'HALF: 1 file missing' : 'FAIL', okCount === 1 ? '' : false); }
