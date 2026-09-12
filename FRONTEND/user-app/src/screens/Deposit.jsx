@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { addDoc, collection, doc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase.js';
-import { todayStr } from '../lib.js';
 import { TopBar } from '../components/ui.jsx';
 
 const FALLBACK_AMOUNTS = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000];
@@ -33,6 +32,7 @@ export default function Deposit({ profile, uid, toast, go }) {
       if (d.exists() && d.data().minDeposit) minDep = parseFloat(d.data().minDeposit);
     } catch (e) {}
     if (!amt || amt < minDep) return toast('Minimum deposit ₹' + minDep, '#ff3b30');
+    if (amt > 5000) return toast('Maximum deposit ₹5000', '#ff3b30');
     go('payqr:' + amt);
   }
 
@@ -65,20 +65,20 @@ export default function Deposit({ profile, uid, toast, go }) {
   );
 }
 
-// Payment Page: QR Code + Timer + Auto Verify
 export function PayQr({ amount, profile, uid, toast, go }) {
+  const [status, setStatus] = useState('loading');
   const [txnid, setTxnid] = useState('');
-  const [qrData, setQrData] = useState('');
-  const [timer, setTimer] = useState(300); // 5 min
-  const [status, setStatus] = useState('loading'); // loading | pending | success | failed
+  const [errorMsg, setErrorMsg] = useState('');
   const [busy, setBusy] = useState(false);
+  const [timer, setTimer] = useState(300);
   const pollRef = useRef(null);
   const timerRef = useRef(null);
+  const orderDataRef = useRef(null);
 
-  // Create PayU order
   const createOrder = useCallback(async () => {
     setBusy(true);
     setStatus('loading');
+    setErrorMsg('');
     try {
       const res = await fetch(BACKEND_URL + '/payu-order.php', {
         method: 'POST',
@@ -95,24 +95,67 @@ export function PayQr({ amount, profile, uid, toast, go }) {
       if (!data.success) throw new Error(data.error || 'Order create failed');
 
       setTxnid(data.txnid);
-
-      // UPI QR code generate karo
-      const upiId = '8690473929-2@ybl'; // Merchant UPI
-      const qrUrl = `upi://pay?pa=${upiId}&pn=Ludo Royal Club&am=${amount}&tn=Deposit ${data.txnid}&cu=INR`;
-      setQrData(qrUrl);
-
-      setStatus('pending');
-      setTimer(300);
-      startPolling(data.txnid);
+      orderDataRef.current = data;
+      setStatus('ready');
     } catch (e) {
-      toast('Error: ' + e.message, '#ff3b30');
+      setErrorMsg(e.message);
       setStatus('failed');
     } finally {
       setBusy(false);
     }
-  }, [amount, uid, profile, toast]);
+  }, [amount, uid, profile]);
 
-  // Polling: har 5 sec pe verify karo
+  useEffect(() => {
+    createOrder();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      clearInterval(pollRef.current);
+      clearInterval(timerRef.current);
+    };
+  }, []);
+
+  function openPayU() {
+    const data = orderDataRef.current;
+    if (!data || !data.fields) return;
+
+    const f = data.fields;
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = data.payu_url;
+    form.target = '_blank';
+
+    const fields = {
+      key: f.key,
+      txnid: f.txnid,
+      amount: f.amount,
+      productinfo: f.productinfo,
+      firstname: f.firstname,
+      email: f.email,
+      phone: f.phone,
+      surl: f.surl,
+      furl: f.furl,
+      hash: f.hash,
+    };
+
+    Object.entries(fields).forEach(([k, v]) => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = k;
+      input.value = String(v);
+      form.appendChild(input);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+
+    setStatus('polling');
+    setTimer(300);
+    startPolling(data.txnid);
+  }
+
   function startPolling(id) {
     if (pollRef.current) clearInterval(pollRef.current);
     pollRef.current = setInterval(async () => {
@@ -128,15 +171,12 @@ export function PayQr({ amount, profile, uid, toast, go }) {
           clearInterval(timerRef.current);
           setStatus('success');
         }
-      } catch (e) {
-        // Retry on next tick
-      }
+      } catch (e) {}
     }, 5000);
   }
 
-  // Timer
   useEffect(() => {
-    if (status !== 'pending') return;
+    if (status !== 'polling') return;
     timerRef.current = setInterval(() => {
       setTimer((t) => {
         if (t <= 1) {
@@ -154,61 +194,12 @@ export function PayQr({ amount, profile, uid, toast, go }) {
     };
   }, [status]);
 
-  // Order create on mount
-  useEffect(() => {
-    createOrder();
-  }, []);
-
   function formatTime(s) {
     const m = Math.floor(s / 60);
     const sec = s % 60;
     return `${m}:${sec < 10 ? '0' : ''}${sec}`;
   }
 
-  // SUCCESS
-  if (status === 'success') {
-    return (
-      <div className="section active">
-        <TopBar title="Payment" onBack={() => go('wallet')} />
-        <div className="deposit-page-card" style={{ textAlign: 'center', padding: '40px 20px' }}>
-          <div style={{ fontSize: 60, marginBottom: 16 }}>✅</div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--success)', marginBottom: 8 }}>
-            Payment Successful!
-          </div>
-          <div style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 20 }}>
-            ₹{amount} wallet mein add ho gaya
-          </div>
-          <button className="dp-btn" onClick={() => go('wallet')}>
-            <i className="fas fa-wallet"></i> Wallet pe jao
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // EXPIRED
-  if (status === 'expired') {
-    return (
-      <div className="section active">
-        <TopBar title="Payment" onBack={() => go('wallet')} />
-        <div className="deposit-page-card" style={{ textAlign: 'center', padding: '40px 20px' }}>
-          <div style={{ fontSize: 60, marginBottom: 16 }}>⏰</div>
-          <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Time Expired!</div>
-          <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>
-            Payment ka time khatam ho gaya. Dobara try karo.
-          </div>
-          <button className="dp-btn" onClick={createOrder} disabled={busy}>
-            <i className="fas fa-sync-alt"></i> {busy ? 'Loading...' : 'Try Again'}
-          </button>
-          <button className="dp-btn" style={{ background: 'var(--text-muted)', marginTop: 10 }} onClick={() => go('wallet')}>
-            Cancel
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // LOADING
   if (status === 'loading') {
     return (
       <div className="section active">
@@ -221,64 +212,139 @@ export function PayQr({ amount, profile, uid, toast, go }) {
     );
   }
 
-  // PENDING — QR + Timer
-  return (
-    <div className="section active">
-      <TopBar title={`Pay ₹${amount}`} onBack={() => go('wallet')} />
-      <div className="deposit-page-card" style={{ textAlign: 'center' }}>
-        {/* Timer */}
-        <div style={{
-          fontSize: 28, fontWeight: 800, marginBottom: 16,
-          color: timer < 60 ? 'var(--danger)' : 'var(--text)'
-        }}>
-          <i className="fas fa-clock" style={{ marginRight: 6 }}></i>
-          {formatTime(timer)}
+  if (status === 'failed') {
+    return (
+      <div className="section active">
+        <TopBar title="Payment" onBack={() => go('wallet')} />
+        <div className="deposit-page-card" style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <div style={{ fontSize: 50, marginBottom: 16 }}>&#10060;</div>
+          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Order Create Failed</div>
+          <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>{errorMsg}</div>
+          <button className="dp-btn" onClick={createOrder} disabled={busy}>
+            <i className="fas fa-sync-alt"></i> {busy ? 'Loading...' : 'Try Again'}
+          </button>
+          <button className="dp-btn" style={{ background: 'var(--text-muted)', marginTop: 10 }} onClick={() => go('wallet')}>
+            Cancel
+          </button>
         </div>
+      </div>
+    );
+  }
 
-        {/* QR Code */}
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 8 }}>
-            QR scan karke pay karo
+  if (status === 'success') {
+    return (
+      <div className="section active">
+        <TopBar title="Payment" onBack={() => go('wallet')} />
+        <div className="deposit-page-card" style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <div style={{ fontSize: 60, marginBottom: 16 }}>&#9989;</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: '#34c759', marginBottom: 8 }}>
+            Payment Successful!
           </div>
-          {qrData ? (
-            <img
-              src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(qrData)}&size=220x220`}
-              alt="Payment QR"
-              style={{ width: 220, height: 220, borderRadius: 12, border: '2px solid #e5e5ea' }}
-            />
-          ) : (
-            <div style={{ width: 220, height: 220, background: '#f5f5f5', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
-              <span className="loader-dot"></span>
+          <div style={{ fontSize: 14, color: '#86868b', marginBottom: 20 }}>
+            Rs.{amount} wallet mein add ho gaya
+          </div>
+          <button className="dp-btn" onClick={() => go('wallet')}>
+            <i className="fas fa-wallet"></i> Wallet pe jao
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === 'expired') {
+    return (
+      <div className="section active">
+        <TopBar title="Payment" onBack={() => go('wallet')} />
+        <div className="deposit-page-card" style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <div style={{ fontSize: 50, marginBottom: 16 }}>&#9200;</div>
+          <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Time Expired!</div>
+          <div style={{ fontSize: 13, color: '#86868b', marginBottom: 20 }}>
+            Payment ka time khatam ho gaya. Dobara try karo.
+          </div>
+          <button className="dp-btn" onClick={createOrder} disabled={busy}>
+            <i className="fas fa-sync-alt"></i> {busy ? 'Loading...' : 'Try Again'}
+          </button>
+          <button className="dp-btn" style={{ background: '#636366', marginTop: 10 }} onClick={() => go('wallet')}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === 'ready') {
+    return (
+      <div className="section active">
+        <TopBar title={'Pay Rs.' + amount} onBack={() => go('wallet')} />
+        <div className="deposit-page-card" style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <div style={{ fontSize: 50, marginBottom: 16 }}>&#127974;</div>
+          <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 8 }}>
+            Secure Payment
+          </div>
+          <div style={{ fontSize: 13, color: '#86868b', marginBottom: 8 }}>
+            PayU Payment Gateway pe pay karo
+          </div>
+          <div style={{ fontSize: 26, fontWeight: 800, color: '#007aff', marginBottom: 6 }}>
+            Rs.{amount}
+          </div>
+          {txnid && (
+            <div style={{ fontSize: 11, color: '#636366', marginBottom: 20 }}>
+              Order ID: {txnid}
             </div>
           )}
+          <button className="dp-btn" onClick={openPayU} disabled={busy}>
+            <i className="fas fa-lock"></i> Pay Rs.{amount}
+          </button>
+          <button className="dp-btn" style={{ background: '#636366', marginTop: 10 }} onClick={() => go('wallet')}>
+            Cancel
+          </button>
         </div>
-
-        {/* Amount */}
-        <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 6 }}>₹{amount}</div>
-        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>
-          Koi bhi UPI app se scan karo
-        </div>
-
-        {/* Status */}
-        <div style={{ padding: 10, background: '#fffbe6', borderRadius: 10, marginBottom: 12 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: '#856404' }}>
-            <span className="loader-dot" style={{ width: 12, height: 12, display: 'inline-block', verticalAlign: 'middle', marginRight: 6 }}></span>
-            Payment verify ho raha hai...
-          </div>
-        </div>
-
-        {/* Transaction ID */}
-        {txnid && (
-          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 12 }}>
-            Order ID: {txnid}
-          </div>
-        )}
-
-        {/* Retry */}
-        <button className="dp-btn" style={{ background: 'var(--text-muted)' }} onClick={createOrder} disabled={busy}>
-          <i className="fas fa-sync-alt"></i> {busy ? 'Loading...' : 'New QR Generate'}
-        </button>
       </div>
-    </div>
-  );
+    );
+  }
+
+  if (status === 'polling') {
+    return (
+      <div className="section active">
+        <TopBar title={'Pay Rs.' + amount} onBack={() => go('wallet')} />
+        <div className="deposit-page-card" style={{ textAlign: 'center', padding: '30px 20px' }}>
+          <div style={{
+            fontSize: 28, fontWeight: 800, marginBottom: 16,
+            color: timer < 60 ? '#ff3b30' : '#1c1c1e'
+          }}>
+            <i className="fas fa-clock" style={{ marginRight: 6 }}></i>
+            {formatTime(timer)}
+          </div>
+          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>
+            Payment Page khula hai
+          </div>
+          <div style={{ fontSize: 13, color: '#86868b', marginBottom: 6 }}>
+            PayU pe jaake payment karo
+          </div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: '#007aff', marginBottom: 16 }}>
+            Rs.{amount}
+          </div>
+          <div style={{ padding: 10, background: '#fffbe6', borderRadius: 10, marginBottom: 12 }}>
+            <span className="loader-dot" style={{ width: 12, height: 12, display: 'inline-block', verticalAlign: 'middle', marginRight: 6 }}></span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#856404' }}>
+              Payment verify ho raha hai...
+            </span>
+          </div>
+          {txnid && (
+            <div style={{ fontSize: 11, color: '#636366', marginBottom: 12 }}>
+              Order ID: {txnid}
+            </div>
+          )}
+          <button className="dp-btn" onClick={openPayU}>
+            <i className="fas fa-external-link-alt"></i> Payment page dubara kholein
+          </button>
+          <button className="dp-btn" style={{ background: '#636366', marginTop: 10 }} onClick={() => go('wallet')}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
 }
