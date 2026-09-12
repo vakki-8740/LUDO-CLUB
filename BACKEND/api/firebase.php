@@ -11,12 +11,24 @@ function fb_b64url($data) {
 
 function fb_cfg() {
     $f = __DIR__ . '/config.php';
-    if (!file_exists($f)) {
-        http_response_code(500);
-        echo json_encode(['success' => false, 'error' => 'Server config missing (config.php banao)']);
-        exit;
+    if (file_exists($f)) {
+        return require $f;
     }
-    return require $f;
+    // Fallback: env vars se config banao (Render deployment ke liye)
+    $env = function ($k, $d = '') {
+        $v = getenv($k);
+        return ($v === false || $v === '') ? $d : $v;
+    };
+    return [
+        'payu_key'            => $env('PAYU_KEY', ''),
+        'payu_salt'           => $env('PAYU_SALT', ''),
+        'payu_merchant_id'    => $env('PAYU_MERCHANT_ID', ''),
+        'payu_base'           => $env('PAYU_BASE', 'https://secure.payu.in'),
+        'firebase_project_id' => $env('FIREBASE_PROJECT_ID', ''),
+        'firebase_service_json' => $env('FIREBASE_SERVICE_JSON', '{}'),
+        'frontend_base'       => $env('FRONTEND_BASE', ''),
+        'allowed_origins'     => $env('ALLOWED_ORIGINS', ''),
+    ];
 }
 
 function fb_cors($cfg) {
