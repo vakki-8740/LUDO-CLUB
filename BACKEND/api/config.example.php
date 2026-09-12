@@ -1,13 +1,7 @@
 <?php
 // =====================================================
-// LUDO ROYAL CLUB - Payment Server CONFIG
-// Render par: Dashboard > Environment me neeche wali keys banao.
-// (config.php git me NAHI jayegi — sirf TEMPLATE commit hota hai.)
-//
-// RENDER ENV VARS (same naam se banana):
-//   RZP_KEY_ID, RZP_KEY_SECRET, WEBHOOK_SECRET,
-//   FIREBASE_PROJECT_ID, FIREBASE_SERVICE_JSON,
-//   ALLOWED_ORIGINS  (comma wali list chalegi)
+// LUDO ROYAL CLUB - Payment Server CONFIG (TEMPLATE)
+// Render par: Dashboard > Environment me keys banao.
 // =====================================================
 
 $env = function ($k, $d = '') {
@@ -16,26 +10,17 @@ $env = function ($k, $d = '') {
 };
 
 return [
-    // Razorpay Dashboard > Settings > API Keys (TEST mode pehle)
-    'rzp_key_id'     => $env('RZP_KEY_ID', 'rzp_test_PASTE_HERE'),
-    'rzp_key_secret' => $env('RZP_KEY_SECRET', 'PASTE_SECRET_HERE'),
+    // PayU Dashboard > Settings
+    'payu_key'   => $env('PAYU_KEY', 'YOUR_PAYU_KEY'),
+    'payu_salt'  => $env('PAYU_SALT', 'YOUR_PAYU_SALT'),
+    'payu_merchant_id' => $env('PAYU_MERCHANT_ID', 'YOUR_MERCHANT_ID'),
+    'payu_base'  => $env('PAYU_BASE', 'https://secure.payu.in'),
 
-    // Razorpay Dashboard > Settings > Webhooks ka Secret (khud banaya hua)
-    'webhook_secret' => $env('WEBHOOK_SECRET', 'PASTE_WEBHOOK_SECRET_HERE'),
+    // Firebase Console > Project settings > Service accounts
+    'firebase_project_id'   => $env('FIREBASE_PROJECT_ID', 'your-project-id'),
+    'firebase_service_json' => $env('FIREBASE_SERVICE_JSON', '{ "type": "service_account", ... }'),
 
-    // Firebase Console > Project settings > Service accounts > JSON key
-    'firebase_project_id'   => $env('FIREBASE_PROJECT_ID', 'ludojoy-ca35c'),
-    'firebase_service_json' => $env('FIREBASE_SERVICE_JSON', '{ "type": "service_account", ... YAHAN_POORA_JSON ... }'),
-
-    // PayU Dashboard > Settings (TEST mode pehle)
-    // TEST: https://test.payu.in | LIVE: https://secure.payu.in
-    'payu_key'   => $env('PAYU_KEY', ''),
-    'payu_salt'  => $env('PAYU_SALT', ''),
-    'payu_base'  => $env('PAYU_BASE', 'https://test.payu.in'),
-
-    // Frontend jahan wapas bhejna hai (surl/furl isi par banta hai)
-    'frontend_base' => $env('FRONTEND_BASE', 'https://ludoroyalclub.vercel.app'),
-
-    // Kaunse frontend ko allow karna hai
-    'allowed_origins' => $env('ALLOWED_ORIGINS', 'https://ludoroyalclub.vercel.app'),
+    // Frontend URL
+    'frontend_base' => $env('FRONTEND_BASE', 'https://your-app.vercel.app'),
+    'allowed_origins' => $env('ALLOWED_ORIGINS', 'https://your-app.vercel.app'),
 ];
