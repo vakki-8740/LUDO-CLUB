@@ -27,7 +27,7 @@ $env = function ($k, $d = '') {
 
 $API_KEY = $env('PG_API_KEY', '');
 $API_SECRET = $env('PG_API_SECRET', '');
-$API_BASE = $env('PG_API_BASE', 'https://api.demotry.shop');
+$API_BASE = $env('PG_API_BASE', 'https://test.demotry.shop');
 
 try {
     if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') throw new Exception('POST only');
@@ -77,7 +77,7 @@ try {
         'callback_url' => $callbackUrl,
     ]);
 
-    $ch = curl_init($API_BASE . '/api/create-payment');
+    $ch = curl_init($API_BASE . '/api/create-order');
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_POST => true,
