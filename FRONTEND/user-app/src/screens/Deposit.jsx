@@ -4,7 +4,7 @@ import { db } from '../firebase.js';
 import { TopBar } from '../components/ui.jsx';
 
 const DEFAULT_AMOUNTS = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000];
-const BACKEND_URL = 'https://ludo-club-bacend.onrender.com';
+const BACKEND_URL = 'https://php-vakki-8740.wasmer.app';
 
 export default function Deposit({ profile, uid, toast, go }) {
   const [amounts, setAmounts] = useState(DEFAULT_AMOUNTS);
