@@ -27,12 +27,13 @@ function fb_cfg() {
 }
 
 function fb_cors($cfg) {
-    $allowed = array_map('trim', explode(',', $cfg['allowed_origins'] ?? ''));
     $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-    if ($origin && in_array($origin, $allowed, true)) {
+    if ($origin) {
         header('Access-Control-Allow-Origin: ' . $origin);
+    } else {
+        header('Access-Control-Allow-Origin: *');
     }
-    header('Access-Control-Allow-Headers: Content-Type');
+    header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
     header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
     header('Content-Type: application/json; charset=utf-8');
     if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') { http_response_code(204); exit; }
