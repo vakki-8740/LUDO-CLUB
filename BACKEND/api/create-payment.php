@@ -1,10 +1,19 @@
 <?php
 // =====================================================
 // CREATE PAYMENT ORDER
-// POST {amount, userId, userName, callback_url}
-// -> Payment Gateway API se order create
-// -> {success, payment_url, order_id}
 // =====================================================
+
+// CORS headers FIRST (before anything else)
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
+header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
+header('Content-Type: application/json; charset=utf-8');
+
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
+    http_response_code(204);
+    exit;
+}
+
 require __DIR__ . '/firebase.php';
 
 $cfg = fb_cfg();

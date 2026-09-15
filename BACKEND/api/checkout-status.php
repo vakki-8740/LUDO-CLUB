@@ -1,13 +1,20 @@
 <?php
 // =====================================================
-// CHECKOUT STATUS - Payment status check via API
-// POST {order_id}
-// -> {success, status, amount, utr, payment_method}
+// CHECKOUT STATUS
 // =====================================================
-require __DIR__ . '/firebase.php';
 
-$cfg = fb_cfg();
-fb_cors($cfg);
+// CORS headers FIRST
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
+header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
+header('Content-Type: application/json; charset=utf-8');
+
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
+    http_response_code(204);
+    exit;
+}
+
+require __DIR__ . '/firebase.php';
 
 $env = function ($k, $d = '') {
     $v = getenv($k);

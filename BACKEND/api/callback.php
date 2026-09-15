@@ -1,15 +1,20 @@
 <?php
 // =====================================================
-// PAYMENT CALLBACK (Webhook) - Gateway se result aata hai
-// POST {event, order_id, amount, utr, status}
-// -> Wallet Credit
+// PAYMENT CALLBACK (Webhook)
 // =====================================================
+
+// CORS headers FIRST
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
+header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
+header('Content-Type: application/json; charset=utf-8');
+
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
+    http_response_code(204);
+    exit;
+}
+
 require __DIR__ . '/firebase.php';
-
-$cfg = fb_cfg();
-fb_cors($cfg);
-
-header('Content-Type: application/json');
 
 try {
     $in = json_decode(file_get_contents('php://input'), true) ?: [];
