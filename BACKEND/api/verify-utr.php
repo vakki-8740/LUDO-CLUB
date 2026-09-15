@@ -1,10 +1,7 @@
 <?php
 // =====================================================
-// VERIFY UTR - Auto verify via PayU + Firebase
+// VERIFY UTR - UTR store karo, admin verify karega
 // POST {txnid, utr, amount, userId, userName}
-// 1. PayU API se verify karo
-// 2. Agar match mila → wallet credit
-// 3. Agar nahi mila → pending me rakho
 // =====================================================
 require __DIR__ . '/firebase.php';
 
@@ -27,45 +24,9 @@ try {
     if ($userId === '') throw new Exception('userId required');
 
     $token = fb_token($cfg);
-    $key = $cfg['payu_key'] ?? '';
-    $salt = $cfg['payu_salt'] ?? '';
-    $base = rtrim($cfg['payu_base'] ?? 'https://secure.payu.in', '/');
 
-    // 1. PayU se verify karo
-    $verified = false;
-    $payId = '';
-
-    if ($key !== '' && $salt !== '') {
-        try {
-            $vhash = strtolower(hash('sha512', implode('|', [$key, 'verify_payment', $txnid, $salt])));
-            $ch = curl_init($base . '/merchant/postservice?form=2');
-            curl_setopt_array($ch, [
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_POST => true,
-                CURLOPT_POSTFIELDS => http_build_query([
-                    'key' => $key,
-                    'command' => 'verify_payment',
-                    'hash' => $vhash,
-                    'var1' => $txnid,
-                ]),
-                CURLOPT_TIMEOUT => 15,
-            ]);
-            $out = curl_exec($ch);
-            curl_close($ch);
-            $vj = json_decode((string)$out, true) ?: [];
-            $td = $vj['transaction_details'][$txnid] ?? null;
-            if ($td && strtolower($td['status'] ?? '') === 'success') {
-                $verified = true;
-                $payId = $td['mihpayid'] ?? '';
-            }
-        } catch (Exception $e) {}
-    }
-
-    // 2. Transaction store karo
+    // Transaction store karo - Pending status
     $txnPath = 'projects/' . $cfg['firebase_project_id'] . '/databases/(default)/documents/transactions/' . $txnid;
-    $userPath = 'projects/' . $cfg['firebase_project_id'] . '/databases/(default)/documents/users/' . $userId;
-
-    $status = $verified ? 'Success' : 'Pending';
 
     fs_commit($cfg, $token, [
         ['update' => [
@@ -75,12 +36,11 @@ try {
                 'userName' => ['stringValue' => $userName],
                 'type'     => ['stringValue' => 'Deposit'],
                 'amount'   => ['integerValue' => (string)$amount],
-                'status'   => ['stringValue' => $status],
+                'status'   => ['stringValue' => 'Pending'],
                 'utr'      => ['stringValue' => $utr],
                 'details'  => ['mapValue' => ['fields' => [
-                    'method' => ['stringValue' => 'upi_qr'],
+                    'method' => ['stringValue' => 'upi'],
                     'utr'    => ['stringValue' => $utr],
-                    'mihpayid' => ['stringValue' => $payId],
                 ]]],
                 'date'     => ['stringValue' => date('d/m/Y')],
                 'time'     => ['stringValue' => date('H:i:s')],
@@ -88,23 +48,10 @@ try {
         ], 'updateMask' => ['fieldPaths' => ['userId', 'userName', 'type', 'amount', 'status', 'utr', 'details', 'date', 'time']]],
     ]);
 
-    // 3. Agar verified hai to wallet credit karo
-    if ($verified && $amount > 0) {
-        fs_commit($cfg, $token, [
-            ['updateTransforms' => [
-                'document' => $userPath,
-                'fieldTransforms' => [
-                    ['fieldPath' => 'balance', 'increment' => ['integerValue' => (string)$amount]],
-                    ['fieldPath' => 'totalDeposit', 'increment' => ['integerValue' => (string)$amount]],
-                ],
-            ]],
-        ]);
-    }
-
     echo json_encode([
         'success' => true,
-        'verified' => $verified,
-        'message' => $verified ? 'Payment verified! Wallet updated.' : 'UTR submitted. Admin verify karega.',
+        'verified' => false,
+        'message' => 'UTR submitted. Admin verify karega.',
     ]);
 
 } catch (Exception $e) {

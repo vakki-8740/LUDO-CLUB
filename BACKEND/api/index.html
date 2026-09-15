@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ludo Royal Club - Payment Server Status</title>
+<title>Ludo Royal Club - Payment Server</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif; background:#0a0a0b; color:#fff; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
@@ -26,20 +26,17 @@
 <body>
 <div class="card">
   <h1>Ludo Royal Club</h1>
-  <p class="sub">Payment Server (QR + Webhook)</p>
+  <p class="sub">Payment Server (UPI + UTR)</p>
   <div class="badge ok" id="main-badge">CHECKING...</div>
 
-  <div class="row"><b>PHP Files</b><span id="t-php">checking...</span></div>
-  <div class="row"><b>payu-order.php</b><span id="t-order">checking...</span></div>
-  <div class="row"><b>submit-utr.php</b><span id="t-utr">checking...</span></div>
-  <div class="row"><b>payu-return.php</b><span id="t-ret">checking...</span></div>
+  <div class="row"><b>PHP</b><span id="t-php">checking...</span></div>
+  <div class="row"><b>verify-utr.php</b><span id="t-utr">checking...</span></div>
 
   <button onclick="runCheck()">Recheck Status</button>
   <div class="time" id="t-time"></div>
   <div class="hint">
-    • config.php (secrets) yahan se check nahi hota — File Manager me dekho.<br>
-    • Webhook Razorpay dashboard me lagana mat bhoolna.<br>
-    • Admin panel > Payment Server me isi folder ka URL dalo.
+    Admin panel mein payment links set karo.<br/>
+    User chip select kare → pay kare → UTR dale → Admin verify kare.
   </div>
 </div>
 
@@ -50,37 +47,21 @@ function set(id, txt, ok) {
 }
 async function runCheck() {
   document.getElementById('t-time').textContent = 'Last check: ' + new Date().toLocaleString();
-  set('t-php', 'checking...', ''); set('t-qr', 'checking...', ''); set('t-wh', 'checking...', '');
+  set('t-php', 'checking...', ''); set('t-utr', 'checking...', '');
   let okCount = 0;
 
-  // payu-order.php GET par "POST only" JSON deta hai = PHP + file OK
   try {
-    const r = await fetch('payu-order.php');
-    const j = await r.json();
-    if (j.error && j.error.includes('POST only')) { set('t-order', 'OK (file live)', true); okCount++; }
-    else { set('t-order', 'FAIL: ajeeb jawab', false); }
-  } catch (e) { set('t-order', 'FAIL: file nahi mili', false); }
-
-  // submit-utr.php GET par "POST only" JSON deta hai = file OK
-  try {
-    const r = await fetch('submit-utr.php');
+    const r = await fetch('verify-utr.php');
     const j = await r.json();
     if (j.error && j.error.includes('POST only')) { set('t-utr', 'OK (file live)', true); okCount++; }
     else { set('t-utr', 'FAIL: ajeeb jawab', false); }
   } catch (e) { set('t-utr', 'FAIL: file nahi mili', false); }
 
-  // payu-return.php bina data ke error deta hai = file OK
-  try {
-    const r = await fetch('payu-return.php');
-    if (r.ok || r.status === 400) { set('t-ret', 'OK (file live)', true); okCount++; }
-    else { set('t-ret', 'FAIL', false); }
-  } catch (e) { set('t-ret', 'FAIL: file nahi mili', false); }
-
-  if (okCount === 2) { set('t-php', 'OK (PHP chal raha)', true); }
-  else { set('t-php', okCount === 1 ? 'HALF: 1 file missing' : 'FAIL', okCount === 1 ? '' : false); }
+  if (okCount === 1) { set('t-php', 'OK (PHP chal raha)', true); }
+  else { set('t-php', 'FAIL', false); }
 
   const b = document.getElementById('main-badge');
-  const allOk = okCount === 2;
+  const allOk = okCount === 1;
   b.textContent = allOk ? 'SERVER WORKING' : 'SERVER ME PROBLEM HAI';
   b.className = 'badge ' + (allOk ? 'ok' : 'bad');
 }

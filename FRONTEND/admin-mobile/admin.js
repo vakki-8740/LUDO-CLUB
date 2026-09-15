@@ -730,13 +730,6 @@ function loadSettings() {
             document.getElementById('s-upi-id').value = d.data().upiId || '';
         }
     }).catch(() => {});
-    // PayU keys (display)
-    db.collection('settings').doc('payu').get().then(d => {
-        if (d.exists) {
-            document.getElementById('s-payu-key').value = d.data().key || '';
-            document.getElementById('s-payu-salt').value = d.data().salt || '';
-        }
-    }).catch(() => {});
     // Payment links
     db.collection('settings').doc('paylinks').get().then(d => {
         if (d.exists) {
@@ -744,10 +737,6 @@ function loadSettings() {
             document.getElementById('s-pay-links').value =
                 Object.keys(links).map(k => k + '=' + links[k]).join('\n');
         }
-    }).catch(() => {});
-    // Payment server
-    db.collection('settings').doc('payment').get().then(d => {
-        if (d.exists) document.getElementById('s-pay-server').value = d.data().serverUrl || '';
     }).catch(() => {});
     // KYC Telegram (bot token + channel chat id)
     db.collection('settings').doc('kyc_telegram').get().then(d => {
@@ -783,16 +772,6 @@ async function savePayLinks(btn) {
     loading(btn, false);
 }
 
-// Payment Server URL (QR + webhook wala PHP host)
-async function savePaymentServer(btn) {
-    loading(btn, true);
-    const serverUrl = document.getElementById('s-pay-server').value.trim().replace(/\/+$/, '');
-    if (!serverUrl) { showToast('Server URL dalo', 'var(--danger)'); loading(btn, false); return; }
-    await db.collection('settings').doc('payment').set({ serverUrl }, { merge: true });
-    showToast('Payment server saved', 'var(--success)');
-    loading(btn, false);
-}
-
 // Manual Deposit QR + UPI ID (user QR scan karke UTR bhejta hai)
 async function saveDepositQr(btn) {
     loading(btn, true);
@@ -801,17 +780,6 @@ async function saveDepositQr(btn) {
     if (!qrUrl && !upiId) { showToast('QR URL ya UPI ID dalo', 'var(--danger)'); loading(btn, false); return; }
     await db.collection('settings').doc('deposit_qr').set({ qrUrl, upiId }, { merge: true });
     showToast('Deposit QR saved', 'var(--success)');
-    loading(btn, false);
-}
-
-// PayU Test Key + Salt (display ke liye; asli verify server config se hota hai)
-async function savePayU(btn) {
-    loading(btn, true);
-    const key = document.getElementById('s-payu-key').value.trim();
-    const salt = document.getElementById('s-payu-salt').value.trim();
-    if (!key || !salt) { showToast('Key aur Salt dono dalo', 'var(--danger)'); loading(btn, false); return; }
-    await db.collection('settings').doc('payu').set({ key, salt }, { merge: true });
-    showToast('PayU saved (Salt server config me bhi dalna hai)', 'var(--success)');
     loading(btn, false);
 }
 

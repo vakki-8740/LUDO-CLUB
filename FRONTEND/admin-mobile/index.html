@@ -232,26 +232,11 @@
                         <input type="text" id="s-upi-id" placeholder="name@upi">
                         <button class="btn btn-success" onclick="saveDepositQr(this)"><span class="btn-text">Save QR</span><div class="spinner"></div></button>
                     </div>
-                    <div class="header" style="margin-top:40px;"><h1>PayU (online deposit)</h1></div>
-                    <div class="form-card">
-                        <label style="font-size:12px; font-weight:bold; color:var(--text-muted); margin-bottom:5px; display:block;">Test Key</label>
-                        <input type="text" id="s-payu-key" placeholder="Test Key">
-                        <label style="font-size:12px; font-weight:bold; color:var(--text-muted); margin-bottom:5px; display:block;">Test Salt</label>
-                        <input type="text" id="s-payu-salt" placeholder="Test Salt">
-                        <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Salt server par lagta hai (config me) — app me paisa sirf verify ke baad judta hai.</p>
-                        <button class="btn btn-success" onclick="savePayU(this)"><span class="btn-text">Save PayU</span><div class="spinner"></div></button>
-                    </div>
                     <div class="header" style="margin-top:40px;"><h1>Payment Links (har chip ka alag link)</h1></div>
                     <div class="form-card">
-                        <label style="font-size:12px; font-weight:bold; color:var(--text-muted); margin-bottom:5px; display:block;">Har line me: amount=link (Razorpay dashboard se fixed-amount link banao)</label>
-                        <textarea id="s-pay-links" rows="6" placeholder="100=https://rzp.io/rzp/AAAA&#10;200=https://rzp.io/rzp/BBBB&#10;500=https://rzp.io/rzp/CCCC"></textarea>
+                        <label style="font-size:12px; font-weight:bold; color:var(--text-muted); margin-bottom:5px; display:block;">Har line me: amount=link</label>
+                        <textarea id="s-pay-links" rows="6" placeholder="1=https://payment-link.com/1&#10;2=https://payment-link.com/2&#10;5=https://payment-link.com/5"></textarea>
                         <button class="btn btn-success" onclick="savePayLinks(this)"><span class="btn-text">Save Links</span><div class="spinner"></div></button>
-                    </div>
-                    <div class="header" style="margin-top:40px;"><h1>Payment Server (auto deposit ke liye)</h1></div>
-                    <div class="form-card">
-                        <label style="font-size:12px; font-weight:bold; color:var(--text-muted); margin-bottom:5px; display:block;">Server URL (PHP host ka api folder)</label>
-                        <input type="text" id="s-pay-server" placeholder="https://tumhara-host/api">
-                        <button class="btn btn-success" onclick="savePaymentServer(this)"><span class="btn-text">Save Server</span><div class="spinner"></div></button>
                     </div>
                     <div class="header" style="margin-top:40px;"><h1>KYC Telegram (Aadhaar photos yahan jayengi)</h1></div>
                     <div class="form-card">

@@ -2,7 +2,6 @@
 // =====================================================
 // Firebase Admin REST (composer nahi chahiye).
 // Service-account JWT -> OAuth token -> Firestore REST.
-// Sirf server par chalta hai (secret yahin rehta hai).
 // =====================================================
 
 function fb_b64url($data) {
@@ -14,21 +13,16 @@ function fb_cfg() {
     if (file_exists($f)) {
         return require $f;
     }
-    // Fallback: env vars se config banao (Render deployment ke liye)
     $env = function ($k, $d = '') {
         $v = getenv($k);
         return ($v === false || $v === '') ? $d : $v;
     };
     return [
-        'payu_key'            => $env('PAYU_KEY', ''),
-        'payu_salt'           => $env('PAYU_SALT', ''),
-        'payu_merchant_id'    => $env('PAYU_MERCHANT_ID', ''),
-        'payu_base'           => $env('PAYU_BASE', 'https://secure.payu.in'),
         'firebase_project_id' => $env('FIREBASE_PROJECT_ID', ''),
         'firebase_service_json' => $env('FIREBASE_SERVICE_JSON', '{}'),
-        'frontend_base'       => $env('FRONTEND_BASE', ''),
-        'backend_base'        => $env('BACKEND_BASE', ''),
-        'allowed_origins'     => $env('ALLOWED_ORIGINS', ''),
+        'frontend_base' => $env('FRONTEND_BASE', ''),
+        'backend_base' => $env('BACKEND_BASE', ''),
+        'allowed_origins' => $env('ALLOWED_ORIGINS', ''),
     ];
 }
 
@@ -44,7 +38,6 @@ function fb_cors($cfg) {
     if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') { http_response_code(204); exit; }
 }
 
-// OAuth access token (1 ghante cache)
 function fb_token($cfg) {
     $cacheFile = sys_get_temp_dir() . '/lrc_fb_tok_' . md5($cfg['firebase_project_id']) . '.json';
     if (file_exists($cacheFile)) {
@@ -68,7 +61,7 @@ function fb_token($cfg) {
     ]));
     $sig = '';
     if (!openssl_sign($header . '.' . $claim, $sig, $sa['private_key'], OPENSSL_ALGO_SHA256)) {
-        throw new Exception('JWT sign fail (openssl check karo)');
+        throw new Exception('JWT sign fail');
     }
     $jwt = $header . '.' . $claim . '.' . fb_b64url($sig);
 
@@ -87,7 +80,7 @@ function fb_token($cfg) {
     curl_close($ch);
     $j = json_decode((string)$out, true);
     if ($code !== 200 || !isset($j['access_token'])) {
-        throw new Exception('Google token fail: ' . substr((string)$out, 0, 200));
+        throw new Exception('Google token fail');
     }
     @file_put_contents($cacheFile, json_encode(['token' => $j['access_token'], 'exp' => $now + 3500]));
     return $j['access_token'];
@@ -113,7 +106,6 @@ function fs_curl($method, $url, $token, $body = null) {
     return [$code, json_decode((string)$out, true)];
 }
 
-// Firestore value -> simple PHP
 function fs_val($v) {
     if (!is_array($v)) return null;
     if (isset($v['stringValue'])) return $v['stringValue'];
@@ -138,25 +130,8 @@ function fs_doc_get($cfg, $token, $path) {
     return $doc;
 }
 
-// Commit (transforms + updates ek saath, atomic)
 function fs_commit($cfg, $token, $writes) {
     [$code, $j] = fs_curl('POST', fs_base($cfg) . ':commit', $token, ['writes' => $writes]);
-    if ($code !== 200) throw new Exception('Firestore write fail: ' . substr(json_encode($j), 0, 200));
+    if ($code !== 200) throw new Exception('Firestore write fail');
     return $j;
-}
-
-function rzp_api($cfg, $method, $path, $body = null) {
-    $ch = curl_init('https://api.razorpay.com/v1' . $path);
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_CUSTOMREQUEST => $method,
-        CURLOPT_USERPWD => $cfg['rzp_key_id'] . ':' . $cfg['rzp_key_secret'],
-        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-        CURLOPT_TIMEOUT => 25,
-    ]);
-    if ($body !== null) curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($body));
-    $out = curl_exec($ch);
-    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    return [$code, json_decode((string)$out, true)];
 }
