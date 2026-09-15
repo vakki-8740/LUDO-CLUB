@@ -131,12 +131,19 @@ export default function App() {
 
   const canInstall = !!installEvt || (isIOS && !isInstalled);
 
-  // PayU se wapas: ?pay=txnId -> success page (asli status backend se)
+  // Payment callback: ?pay=txnId ya ?payment_id=xxx -> success page
   useEffect(() => {
     try {
-      const q = new URLSearchParams(window.location.search).get('pay');
-      if (q) {
-        setScreen('success:' + String(q).trim().slice(0, 40));
+      const params = new URLSearchParams(window.location.search);
+      const pay = params.get('pay');
+      const paymentId = params.get('payment_id');
+
+      if (paymentId) {
+        // ZEROTIXE callback - payment verify karo
+        setScreen('payqr:' + paymentId);
+        window.history.replaceState({}, '', window.location.pathname);
+      } else if (pay) {
+        setScreen('success:' + String(pay).trim().slice(0, 40));
         window.history.replaceState({}, '', window.location.pathname);
       }
     } catch (e) {}
