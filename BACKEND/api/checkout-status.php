@@ -1,6 +1,7 @@
 <?php
 // =====================================================
-// CHECKOUT STATUS
+// CHECKOUT STATUS - ZEROTIXE se payment status check
+// POST {payment_id}
 // =====================================================
 
 // CORS headers FIRST
@@ -16,36 +17,40 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
 
 require __DIR__ . '/firebase.php';
 
+$cfg = fb_cfg();
+
 $env = function ($k, $d = '') {
     $v = getenv($k);
     return ($v === false || $v === '') ? $d : $v;
 };
 
-$API_KEY = $env('PG_API_KEY', '');
-$API_SECRET = $env('PG_API_SECRET', '');
-$API_BASE = $env('PG_API_BASE', 'https://api.demotry.shop');
+$ACCOUNT_ID = $env('ZT_ACCOUNT_ID', '');
+$SECRET_KEY = $env('ZT_SECRET_KEY', '');
+$API_BASE = 'https://zerotize.in';
 
 try {
     if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') throw new Exception('POST only');
     $in = json_decode(file_get_contents('php://input'), true) ?: [];
 
-    $orderId = preg_replace('/[^A-Za-z0-9_-]/', '', (string)($in['order_id'] ?? ''));
-    if ($orderId === '') throw new Exception('order_id required');
-    if ($API_KEY === '' || $API_SECRET === '') throw new Exception('Payment gateway config missing');
+    $paymentId = preg_replace('/[^A-Za-z0-9_-]/', '', (string)($in['payment_id'] ?? ''));
+    if ($paymentId === '') throw new Exception('payment_id required');
+    if ($ACCOUNT_ID === '' || $SECRET_KEY === '') throw new Exception('Payment gateway config missing');
 
-    // Call Payment Gateway API
-    $payload = json_encode(['order_id' => $orderId]);
+    // Call ZEROTIXE API
+    $payload = json_encode([
+        'fetch_payment' => [
+            'account_id' => $ACCOUNT_ID,
+            'secret_key' => $SECRET_KEY,
+            'payment_id' => $paymentId,
+        ]
+    ]);
 
-    $ch = curl_init($API_BASE . '/api/checkout-status');
+    $ch = curl_init($API_BASE . '/api_payment_status');
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_POST => true,
         CURLOPT_POSTFIELDS => $payload,
-        CURLOPT_HTTPHEADER => [
-            'X-API-Key: ' . $API_KEY,
-            'X-API-Secret: ' . $API_SECRET,
-            'Content-Type: application/json',
-        ],
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
         CURLOPT_TIMEOUT => 20,
     ]);
 
@@ -53,38 +58,33 @@ try {
     curl_close($ch);
 
     $result = json_decode((string)$response, true) ?: [];
+    $payment = $result['payment'] ?? $result;
 
-    if ($result['status'] !== 'success' || empty($result['data'])) {
-        throw new Exception('Invalid response from payment gateway');
-    }
+    $gatewayStatus = strtolower(trim($payment['payment_status'] ?? $payment['status'] ?? ''));
 
-    $gatewayData = $result['data'];
-    $gatewayStatus = strtolower(trim($gatewayData['payment_status'] ?? ''));
+    // If success, credit wallet
     if ($gatewayStatus === 'success' || $gatewayStatus === 'completed') {
         $token = fb_token($cfg);
-        $txn = fs_doc_get($cfg, $token, 'transactions/' . $orderId);
+        $txn = fs_doc_get($cfg, $token, 'transactions/' . $paymentId);
 
         if ($txn && ($txn['status'] ?? '') !== 'Success') {
             $uid = $txn['userId'] ?? '';
             $amt = (int)($txn['amount'] ?? 0);
-            $utr = preg_replace('/[^0-9]/', '', (string)($gatewayData['utr'] ?? ''));
 
             if ($uid !== '' && $amt > 0) {
                 $userPath = 'projects/' . $cfg['firebase_project_id'] . '/databases/(default)/documents/users/' . $uid;
-                $txnPath = 'projects/' . $cfg['firebase_project_id'] . '/databases/(default)/documents/transactions/' . $orderId;
+                $txnPath = 'projects/' . $cfg['firebase_project_id'] . '/databases/(default)/documents/transactions/' . $paymentId;
 
                 fs_commit($cfg, $token, [
                     ['update' => [
                         'name' => $txnPath,
                         'fields' => [
                             'status' => ['stringValue' => 'Success'],
-                            'utr'    => ['stringValue' => $utr],
                             'details' => ['mapValue' => ['fields' => [
-                                'method' => ['stringValue' => 'payment_gateway'],
-                                'utr'    => ['stringValue' => $utr],
+                                'method' => ['stringValue' => 'zerotixe'],
                             ]]],
                         ],
-                    ], 'updateMask' => ['fieldPaths' => ['status', 'utr', 'details']]],
+                    ], 'updateMask' => ['fieldPaths' => ['status', 'details']]],
                     ['updateTransforms' => [
                         'document' => $userPath,
                         'fieldTransforms' => [
@@ -94,18 +94,16 @@ try {
                     ]],
                 ]);
 
-                $result['wallet_updated'] = true;
+                $payment['wallet_updated'] = true;
             }
         }
     }
 
     echo json_encode([
         'success' => true,
-        'status' => $gatewayData['payment_status'] ?? '',
-        'amount' => $gatewayData['amount'] ?? '',
-        'utr' => $gatewayData['utr'] ?? '',
-        'payment_method' => $gatewayData['payment_method'] ?? '',
-        'paid_at' => $gatewayData['paid_at'] ?? '',
+        'status' => $gatewayStatus,
+        'amount' => $payment['payment_amount'] ?? '',
+        'payment_id' => $paymentId,
     ]);
 
 } catch (Exception $e) {

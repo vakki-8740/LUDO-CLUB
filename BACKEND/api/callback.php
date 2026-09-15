@@ -1,85 +1,107 @@
 <?php
 // =====================================================
-// PAYMENT CALLBACK (Webhook)
+// CALLBACK - ZEROTIXE redirect ke baad
+// User payment ke baad yahan redirect hoga
+// GET ?payment_id=xxx
 // =====================================================
-
-// CORS headers FIRST
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
-header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
-header('Content-Type: application/json; charset=utf-8');
-
-if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
-    http_response_code(204);
-    exit;
-}
 
 require __DIR__ . '/firebase.php';
 
+$cfg = fb_cfg();
+
+$env = function ($k, $d = '') {
+    $v = getenv($k);
+    return ($v === false || $v === '') ? $d : $v;
+};
+
+$ACCOUNT_ID = $env('ZT_ACCOUNT_ID', '');
+$SECRET_KEY = $env('ZT_SECRET_KEY', '');
+$API_BASE = 'https://zerotize.in';
+
+$paymentId = preg_replace('/[^A-Za-z0-9_-]/', '', (string)($_GET['payment_id'] ?? ''));
+$frontend = rtrim($cfg['frontend_base'] ?? '', '/');
+
+if ($paymentId === '') {
+    header('Location: ' . $frontend);
+    exit;
+}
+
 try {
-    $in = json_decode(file_get_contents('php://input'), true) ?: [];
+    // ZEROTIXE se payment status check karo
+    $payload = json_encode([
+        'fetch_payment' => [
+            'account_id' => $ACCOUNT_ID,
+            'secret_key' => $SECRET_KEY,
+            'payment_id' => $paymentId,
+        ]
+    ]);
 
-    $event = strtolower(trim((string)($in['event'] ?? '')));
-    $orderId = preg_replace('/[^A-Za-z0-9_-]/', '', (string)($in['order_id'] ?? ''));
-    $amount = (float)($in['amount'] ?? 0);
-    $utr = preg_replace('/[^0-9]/', '', (string)($in['utr'] ?? ''));
-    $status = strtolower(trim((string)($in['status'] ?? '')));
+    $ch = curl_init($API_BASE . '/api_payment_status');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => $payload,
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+        CURLOPT_TIMEOUT => 20,
+    ]);
 
-    if ($orderId === '') throw new Exception('order_id required');
-    if ($event !== 'payment.success' && $status !== 'success') {
-        echo json_encode(['success' => true, 'message' => 'Not success event, ignored']);
-        exit;
-    }
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    $result = json_decode((string)$response, true) ?: [];
+    $payment = $result['payment'] ?? $result;
+
+    $status = strtolower(trim($payment['payment_status'] ?? $payment['status'] ?? ''));
 
     $token = fb_token($cfg);
+    $txn = fs_doc_get($cfg, $token, 'transactions/' . $paymentId);
 
-    // Get transaction from Firestore
-    $txn = fs_doc_get($cfg, $token, 'transactions/' . $orderId);
     if (!$txn) throw new Exception('Transaction not found');
 
     // Already credited?
     if (($txn['status'] ?? '') === 'Success') {
-        echo json_encode(['success' => true, 'message' => 'Already credited']);
+        header('Location: ' . $frontend . '/?pay=' . $paymentId . '&st=ok');
         exit;
     }
 
-    // Amount match?
-    $txnAmount = (int)($txn['amount'] ?? 0);
-    if ($txnAmount > 0 && abs($txnAmount - (int)$amount) > 1) {
-        throw new Exception('Amount mismatch');
+    if ($status === 'success' || $status === 'completed') {
+        // Wallet credit
+        $uid = $txn['userId'] ?? '';
+        $amt = (int)($txn['amount'] ?? 0);
+
+        if ($uid !== '' && $amt > 0) {
+            $userPath = 'projects/' . $cfg['firebase_project_id'] . '/databases/(default)/documents/users/' . $uid;
+            $txnPath = 'projects/' . $cfg['firebase_project_id'] . '/databases/(default)/documents/transactions/' . $paymentId;
+
+            fs_commit($cfg, $token, [
+                ['update' => [
+                    'name' => $txnPath,
+                    'fields' => [
+                        'status' => ['stringValue' => 'Success'],
+                        'details' => ['mapValue' => ['fields' => [
+                            'method' => ['stringValue' => 'zerotixe'],
+                        ]]],
+                    ],
+                ], 'updateMask' => ['fieldPaths' => ['status', 'details']]],
+                ['updateTransforms' => [
+                    'document' => $userPath,
+                    'fieldTransforms' => [
+                        ['fieldPath' => 'balance', 'increment' => ['integerValue' => (string)$amt]],
+                        ['fieldPath' => 'totalDeposit', 'increment' => ['integerValue' => (string)$amt]],
+                    ],
+                ]],
+            ]);
+
+            header('Location: ' . $frontend . '/?pay=' . $paymentId . '&st=ok');
+        } else {
+            header('Location: ' . $frontend . '/?pay=' . $paymentId . '&st=fail');
+        }
+    } else {
+        header('Location: ' . $frontend . '/?pay=' . $paymentId . '&st=fail');
     }
 
-    // Credit wallet
-    $uid = $txn['userId'] ?? '';
-    if ($uid === '' || $txnAmount <= 0) throw new Exception('Invalid transaction data');
-
-    $userPath = 'projects/' . $cfg['firebase_project_id'] . '/databases/(default)/documents/users/' . $uid;
-    $txnPath = 'projects/' . $cfg['firebase_project_id'] . '/databases/(default)/documents/transactions/' . $orderId;
-
-    fs_commit($cfg, $token, [
-        ['update' => [
-            'name' => $txnPath,
-            'fields' => [
-                'status' => ['stringValue' => 'Success'],
-                'utr'    => ['stringValue' => $utr],
-                'details' => ['mapValue' => ['fields' => [
-                    'method' => ['stringValue' => 'payment_gateway'],
-                    'utr'    => ['stringValue' => $utr],
-                ]]],
-            ],
-        ], 'updateMask' => ['fieldPaths' => ['status', 'utr', 'details']]],
-        ['updateTransforms' => [
-            'document' => $userPath,
-            'fieldTransforms' => [
-                ['fieldPath' => 'balance', 'increment' => ['integerValue' => (string)$txnAmount]],
-                ['fieldPath' => 'totalDeposit', 'increment' => ['integerValue' => (string)$txnAmount]],
-            ],
-        ]],
-    ]);
-
-    echo json_encode(['success' => true, 'message' => 'Wallet credited']);
-
 } catch (Exception $e) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    header('Location: ' . $frontend . '/?pay=fail');
 }
+
+exit;
