@@ -54,12 +54,12 @@ try {
 
     $result = json_decode((string)$response, true) ?: [];
 
-    if (!isset($result['status'])) {
+    if ($result['status'] !== 'success' || empty($result['data'])) {
         throw new Exception('Invalid response from payment gateway');
     }
 
-    // If payment success, credit wallet
-    $gatewayStatus = strtolower(trim($result['status'] ?? ''));
+    $gatewayData = $result['data'];
+    $gatewayStatus = strtolower(trim($gatewayData['payment_status'] ?? ''));
     if ($gatewayStatus === 'success' || $gatewayStatus === 'completed') {
         $token = fb_token($cfg);
         $txn = fs_doc_get($cfg, $token, 'transactions/' . $orderId);
@@ -67,7 +67,7 @@ try {
         if ($txn && ($txn['status'] ?? '') !== 'Success') {
             $uid = $txn['userId'] ?? '';
             $amt = (int)($txn['amount'] ?? 0);
-            $utr = preg_replace('/[^0-9]/', '', (string)($result['utr'] ?? ''));
+            $utr = preg_replace('/[^0-9]/', '', (string)($gatewayData['utr'] ?? ''));
 
             if ($uid !== '' && $amt > 0) {
                 $userPath = 'projects/' . $cfg['firebase_project_id'] . '/databases/(default)/documents/users/' . $uid;
@@ -101,11 +101,11 @@ try {
 
     echo json_encode([
         'success' => true,
-        'status' => $result['status'],
-        'amount' => $result['amount'] ?? '',
-        'utr' => $result['utr'] ?? '',
-        'payment_method' => $result['payment_method'] ?? '',
-        'paid_at' => $result['paid_at'] ?? '',
+        'status' => $gatewayData['payment_status'] ?? '',
+        'amount' => $gatewayData['amount'] ?? '',
+        'utr' => $gatewayData['utr'] ?? '',
+        'payment_method' => $gatewayData['payment_method'] ?? '',
+        'paid_at' => $gatewayData['paid_at'] ?? '',
     ]);
 
 } catch (Exception $e) {

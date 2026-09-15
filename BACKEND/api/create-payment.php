@@ -96,18 +96,18 @@ try {
 
     $result = json_decode((string)$response, true) ?: [];
 
-    // Debug: actual response dikhao
-    if (!isset($result['payment_url']) || ($result['status'] ?? '') !== 'success') {
-        $errorMsg = $result['message'] ?? $result['error'] ?? $result['msg'] ?? 'Unknown error';
-        $detail = isset($result['payment_url']) ? 'has_url' : 'no_url';
-        $statusVal = $result['status'] ?? 'no_status';
-        throw new Exception("API: status=$statusVal detail=$detail msg=$errorMsg");
+    // Response format: {status: "success", data: {payment_url: "..."}}
+    if (($result['status'] ?? '') !== 'success' || empty($result['data']['payment_url'])) {
+        $errorMsg = $result['error'] ?? $result['message'] ?? 'Payment API failed';
+        throw new Exception($errorMsg);
     }
+
+    $paymentUrl = $result['data']['payment_url'];
 
     echo json_encode([
         'success' => true,
         'order_id' => $orderId,
-        'payment_url' => $result['payment_url'],
+        'payment_url' => $paymentUrl,
         'amount' => $amount,
     ]);
 
