@@ -1,71 +1,42 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ludo Royal Club - Payment Server</title>
-<style>
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif; background:#0a0a0b; color:#fff; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
-  .card { background:#1c1c1e; border-radius:20px; padding:32px 28px; max-width:440px; width:100%; text-align:center; box-shadow:0 8px 30px rgba(0,0,0,0.5); }
-  h1 { font-size:22px; margin-bottom:6px; }
-  p.sub { color:#86868b; font-size:13px; margin-bottom:18px; }
-  .badge { display:inline-block; padding:8px 18px; border-radius:999px; font-size:14px; font-weight:700; margin-bottom:18px; }
-  .badge.ok { background:rgba(52,199,89,0.15); color:#34c759; }
-  .badge.bad { background:rgba(255,59,48,0.15); color:#ff3b30; }
-  .row { background:#2c2c2e; border-radius:12px; padding:12px 14px; margin-bottom:10px; text-align:left; font-size:13px; }
-  .row b { display:block; margin-bottom:4px; font-size:12px; color:#86868b; text-transform:uppercase; letter-spacing:0.5px; }
-  .pass { color:#34c759; font-weight:700; }
-  .fail { color:#ff3b30; font-weight:700; }
-  button { width:100%; padding:13px; border:none; border-radius:12px; background:#007aff; color:#fff; font-size:15px; font-weight:700; cursor:pointer; margin-top:6px; }
-  button:active { opacity:0.8; }
-  .time { margin-top:14px; font-size:11px; color:#636366; }
-  .hint { margin-top:12px; font-size:12px; color:#86868b; text-align:left; line-height:1.7; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LUDO ROYAL CLUB - API</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #f2f2f7; padding: 20px; }
+        .card { background: #fff; border-radius: 16px; padding: 20px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        h1 { font-size: 22px; color: #1c1c1e; margin-bottom: 8px; }
+        .status { color: #34c759; font-weight: 700; }
+        .api-list { list-style: none; }
+        .api-list li { padding: 10px 0; border-bottom: 1px solid #f2f2f7; font-size: 14px; }
+        .api-list li:last-child { border: none; }
+        .method { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; margin-right: 8px; }
+        .get { background: #e8f5e9; color: #2e7d32; }
+        .post { background: #e3f2fd; color: #1565c0; }
+        code { background: #f2f2f7; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+    </style>
 </head>
 <body>
-<div class="card">
-  <h1>Ludo Royal Club</h1>
-  <p class="sub">Payment Server (UPI + UTR)</p>
-  <div class="badge ok" id="main-badge">CHECKING...</div>
-
-  <div class="row"><b>PHP</b><span id="t-php">checking...</span></div>
-  <div class="row"><b>verify-utr.php</b><span id="t-utr">checking...</span></div>
-
-  <button onclick="runCheck()">Recheck Status</button>
-  <div class="time" id="t-time"></div>
-  <div class="hint">
-    Admin panel mein payment links set karo.<br/>
-    User chip select kare → pay kare → UTR dale → Admin verify kare.
-  </div>
-</div>
-
-<script>
-function set(id, txt, ok) {
-  document.getElementById(id).innerHTML =
-    '<span class="' + (ok === true ? 'pass' : ok === false ? 'fail' : '') + '">' + txt + '</span>';
-}
-async function runCheck() {
-  document.getElementById('t-time').textContent = 'Last check: ' + new Date().toLocaleString();
-  set('t-php', 'checking...', ''); set('t-utr', 'checking...', '');
-  let okCount = 0;
-
-  try {
-    const r = await fetch('verify-utr.php');
-    const j = await r.json();
-    if (j.error && j.error.includes('POST only')) { set('t-utr', 'OK (file live)', true); okCount++; }
-    else { set('t-utr', 'FAIL: ajeeb jawab', false); }
-  } catch (e) { set('t-utr', 'FAIL: file nahi mili', false); }
-
-  if (okCount === 1) { set('t-php', 'OK (PHP chal raha)', true); }
-  else { set('t-php', 'FAIL', false); }
-
-  const b = document.getElementById('main-badge');
-  const allOk = okCount === 1;
-  b.textContent = allOk ? 'SERVER WORKING' : 'SERVER ME PROBLEM HAI';
-  b.className = 'badge ' + (allOk ? 'ok' : 'bad');
-}
-runCheck();
-</script>
+    <div class="card">
+        <h1>LUDO ROYAL CLUB</h1>
+        <p class="status">API Running</p>
+    </div>
+    <div class="card">
+        <h2 style="font-size:16px; margin-bottom:12px;">API Endpoints</h2>
+        <ul class="api-list">
+            <li><span class="method post">POST</span> <code>/register.php</code> - Create account</li>
+            <li><span class="method post">POST</span> <code>/login.php</code> - Login</li>
+            <li><span class="method get">GET</span> <code>/user.php?uid=xxx</code> - User profile</li>
+            <li><span class="method get">GET</span> <code>/transactions.php?uid=xxx</code> - Transactions</li>
+            <li><span class="method post">POST</span> <code>/transactions.php</code> - Create deposit</li>
+            <li><span class="method post">POST</span> <code>/wallet.php</code> - Update wallet</li>
+            <li><span class="method post">POST</span> <code>/admin.php</code> - Approve/Reject</li>
+            <li><span class="method post">POST</span> <code>/send-otp.php</span> - Send OTP</li>
+            <li><span class="method post">POST</span> <code>/verify-otp.php</code> - Verify OTP</li>
+        </ul>
+    </div>
 </body>
 </html>
