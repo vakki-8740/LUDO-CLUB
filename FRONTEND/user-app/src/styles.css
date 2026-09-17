@@ -15,20 +15,96 @@ input:focus, select:focus { outline:none; }
 .loader { width:40px; height:40px; border:4px solid rgba(255,255,255,0.3); border-top:4px solid white; border-radius:50%; animation:spin 1s linear infinite; }
 @keyframes spin { 100% { transform:rotate(360deg); } }
 
-/* ========== LOGIN PAGE ========== */
-#login-page { display:flex; align-items:center; justify-content:center; height:100vh; min-height:100vh; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); }
-.login-container { text-align:center; padding:40px 30px; border-radius:24px; width:90%; max-width:360px; }
-.login-logo h1 { color:#fff; font-size:36px; font-weight:800; margin:10px 0 5px; }
-.login-logo p { color:rgba(255,255,255,0.7); font-size:14px; margin-bottom:30px; }
-.login-form { display:flex; flex-direction:column; gap:14px; }
-.login-field { display:flex; align-items:center; background:rgba(255,255,255,0.15); border-radius:14px; padding:0 16px; gap:12px; border:1.5px solid rgba(255,255,255,0.2); }
-.login-field i { color:rgba(255,255,255,0.7); font-size:18px; }
-.login-field input { flex:1; padding:16px 0; border:none; background:none; color:white; font-size:16px; font-weight:600; outline:none; }
-.login-field input::placeholder { color:rgba(255,255,255,0.5); }
-.login-btn { padding:16px; border-radius:14px; border:none; font-size:16px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; transition:all .2s; }
-.login-btn:active { transform:scale(0.97); }
-.play-btn { background:#ff3b30; color:white; box-shadow:0 4px 15px rgba(255,59,48,0.4); }
-.google-btn { background:white; color:var(--text); box-shadow:0 4px 15px rgba(0,0,0,0.1); }
+/* ========== NEW LOGIN PAGE ========== */
+.new-login-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  background: #ffffff;
+  padding: 24px 20px 40px;
+}
+.new-login-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.new-login-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #1c1c1e;
+  margin: 0 0 6px;
+}
+.new-login-subtitle {
+  font-size: 14px;
+  color: #86868b;
+  margin: 0 0 28px;
+}
+.new-login-fields {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.new-login-input {
+  width: 100%;
+  padding: 16px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #1c1c1e;
+  background: #f2f2f7;
+  border: none;
+  border-radius: 14px;
+  outline: none;
+  box-sizing: border-box;
+}
+.new-login-input::placeholder {
+  color: #8e8e93;
+}
+.new-login-input:focus {
+  box-shadow: 0 0 0 2px #007aff;
+}
+.new-login-buttons {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.new-login-btn-primary {
+  width: 100%;
+  padding: 18px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+  background: #007aff;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.new-login-btn-primary:active {
+  opacity: 0.8;
+}
+.new-login-btn-primary:disabled {
+  opacity: 0.5;
+}
+.new-login-btn-secondary {
+  width: 100%;
+  padding: 18px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #1c1c1e;
+  background: #f2f2f7;
+  border: 2px solid #e5e5ea;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.new-login-btn-secondary:active {
+  opacity: 0.8;
+}
 
 
 /* ========== HOME LAYOUT ========== */
@@ -376,8 +452,9 @@ button, .btn { -webkit-tap-highlight-color:transparent; }
 
 /* ========== RESPONSIVE FIXES ========== */
 @media (max-width:380px) {
-    .login-logo h1 { font-size:28px; }
-    .login-container { padding:30px 20px; }
+    .new-login-title { font-size:22px; }
+    .new-login-input { padding:14px; font-size:14px; }
+    .new-login-btn-primary, .new-login-btn-secondary { padding:16px; font-size:16px; }
     .quick-actions { grid-template-columns:1fr 1fr; }
     .games-grid { gap:8px; }
     .game-card { border-radius:12px; }
@@ -440,7 +517,7 @@ button, .btn { -webkit-tap-highlight-color:transparent; }
 }
 
 @media (min-width:768px) {
-    .login-container { max-width:400px; }
+    .new-login-content { max-width: 400px; margin: 0 auto; }
     .games-grid { max-width:500px; margin:0 auto; gap:16px; }
     .game-card { border-radius:20px; }
     .game-name { font-size:16px; padding:12px 10px 4px; }
@@ -453,11 +530,8 @@ button, .btn { -webkit-tap-highlight-color:transparent; }
 }
 
 @media (max-height:600px) {
-    .login-logo i { font-size:40px !important; }
-    .login-logo h1 { font-size:24px; margin:6px 0 3px; }
-    .login-logo p { font-size:12px; margin-bottom:16px; }
-    .login-btn { padding:12px; font-size:14px; }
-    .login-container { padding:20px; }
+    .new-login-input { padding:12px; font-size:13px; }
+    .new-login-btn-primary, .new-login-btn-secondary { padding:14px; font-size:14px; }
     .profile-card { padding:16px; }
     .profile-avatar { width:60px; height:60px; font-size:26px; }
     .pa-item { padding:12px 14px; font-size:14px; }
