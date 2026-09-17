@@ -79,11 +79,13 @@ export default function Login({ toast }) {
       await signInWithEmailAndPassword(auth, mobile + '@lrc.app', pass);
       toast('Login ho gaya!', '#34c759');
     } catch (err) {
+      console.log('LOGIN ERROR:', err);
       const code = err.code || '';
       if (code === 'auth/user-not-found') toast('Account nahi mila. Pehle register karo.', '#ff3b30');
       else if (code === 'auth/wrong-password') toast('Galat password', '#ff3b30');
       else if (code === 'auth/invalid-credential') toast('Mobile ya password galat hai', '#ff3b30');
-      else toast('Login failed', '#ff3b30');
+      else if (code === 'auth/operation-not-allowed') toast('Email/Password login band hai. Firebase Console mein enable karo.', '#ff3b30');
+      else toast('Login failed: ' + (err.message || code), '#ff3b30');
     } finally {
       setBusy(false);
     }
@@ -128,9 +130,12 @@ export default function Login({ toast }) {
       setMode('login');
       setLoginMobile(mobile);
     } catch (err) {
+      console.log('REGISTER ERROR:', err);
       const code = err.code || '';
       if (code === 'auth/email-already-in-use') toast('Ye mobile pehle se registered hai', '#ff3b30');
-      else toast('Register failed', '#ff3b30');
+      else if (code === 'auth/weak-password') toast('Password kamzor hai', '#ff3b30');
+      else if (code === 'auth/operation-not-allowed') toast('Email/Password login band hai. Firebase Console mein enable karo.', '#ff3b30');
+      else toast('Register failed: ' + (err.message || code), '#ff3b30');
     } finally {
       setBusy(false);
     }
