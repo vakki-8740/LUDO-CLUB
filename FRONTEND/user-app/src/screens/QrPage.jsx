@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { TopBar } from '../components/ui.jsx';
 
 const UPI_ID = 'q896598803@ybl';
-const UPI_NAME = 'LUDO ROYAL CLUB';
+const UPI_NAME = 'LUDO KILLER';
 
 export default function QrPage({ amount, uid, toast, go }) {
   const canvasRef = useRef(null);

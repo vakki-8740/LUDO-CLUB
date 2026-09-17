@@ -41,7 +41,7 @@ export function Support({ go, profile }) {
     if (!s) return;
     if (key === 'email') {
       if (!s.email) return;
-      const subject = encodeURIComponent('Ludo Royal Club Support - ' + (profile.userId || ''));
+      const subject = encodeURIComponent('LUDO KILLER Support - ' + (profile.userId || ''));
       const body = encodeURIComponent(
         'Name: ' + (profile.name || '') + '\nUser ID: ' + (profile.userId || '') + '\n\nMeri problem:\n'
       );

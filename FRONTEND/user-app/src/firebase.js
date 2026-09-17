@@ -1,4 +1,4 @@
-// LUDO ROYAL CLUB — Firebase (Auth + Firestore)
+// LUDO KILLER — Firebase (Auth + Firestore)
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';

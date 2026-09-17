@@ -72,7 +72,7 @@ async function ensureUserDoc(g) {
       const w = await getDoc(doc(db, 'settings', 'welcome'));
       if (w.exists() && w.data().message) msg = w.data().message;
       await addDoc(collection(db, 'users', g.uid, 'mails'), {
-        subject: 'Welcome to Ludo Royal Club! 🎉',
+        subject: 'Welcome to LUDO KILLER! 🎉',
         body: msg,
         from: 'Admin',
         read: false,
@@ -245,7 +245,7 @@ export default function App() {
         <div className="header-left">
           <i className="fas fa-bars menu-hamburger" onClick={() => setMenu((m) => !m)}></i>
           <img src="./logo.png" alt="logo" style={{ width: 28, height: 28, borderRadius: 8, objectFit: 'cover' }} />
-          <span className="header-title">Ludo Royal Club</span>
+          <span className="header-title">LUDO KILLER</span>
         </div>
         <div className="header-right">
           <div className="bal-badge" onClick={() => go('wallet')}>

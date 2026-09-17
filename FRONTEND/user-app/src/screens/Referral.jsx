@@ -26,12 +26,12 @@ export default function Referral({ profile, toast, go }) {
   }
 
   function wa() {
-    const msg = encodeURIComponent(`Join Ludo Royal Club and win real money! Use my referral code: ${code}`);
+    const msg = encodeURIComponent(`Join LUDO KILLER and win real money! Use my referral code: ${code}`);
     window.open(`https://wa.me/?text=${msg}`, '_blank');
   }
 
   function tg() {
-    const msg = encodeURIComponent(`Join Ludo Royal Club and win real money! Use my referral code: ${code}`);
+    const msg = encodeURIComponent(`Join LUDO KILLER and win real money! Use my referral code: ${code}`);
     window.open(`https://t.me/share/url?url=&text=${msg}`, '_blank');
   }
 

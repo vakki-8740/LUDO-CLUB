@@ -4,8 +4,8 @@ import React from 'react';
 export default function Splash() {
   return (
     <div className="splash-screen">
-      <img src="./logo.png" alt="Ludo Royal Club" className="splash-logo" />
-      <h1 className="splash-title">Ludo Royal Club</h1>
+      <img src="./logo.png" alt="LUDO KILLER" className="splash-logo" />
+      <h1 className="splash-title">LUDO KILLER</h1>
       <div className="splash-loader">
         <span></span><span></span><span></span>
       </div>

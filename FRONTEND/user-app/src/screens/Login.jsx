@@ -190,7 +190,7 @@ export default function Login({ toast }) {
     <div className="nl-page">
       <div className="nl-top">
         <img src="./logo.png" alt="LRC" className="nl-logo-lg" />
-        <h1 className="nl-title">Ludo Royal Club</h1>
+        <h1 className="nl-title">LUDO KILLER</h1>
         <p className="nl-sub">Login to continue playing</p>
       </div>
 
