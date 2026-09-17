@@ -16,63 +16,93 @@ input:focus, select:focus { outline:none; }
 @keyframes spin { 100% { transform:rotate(360deg); } }
 
 /* ========== NEW LOGIN PAGE ========== */
-.new-login-page {
+.nl-page {
   min-height: 100vh;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
   background: #ffffff;
-  padding: 24px 20px 40px;
 }
-.new-login-content {
+.nl-top {
+  padding: 60px 24px 30px;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
-.new-login-title {
-  font-size: 26px;
+.nl-logo {
+  width: 70px;
+  height: 70px;
+  border-radius: 18px;
+  object-fit: cover;
+  margin-bottom: 14px;
+}
+.nl-logo-lg {
+  width: 90px;
+  height: 90px;
+  border-radius: 22px;
+  object-fit: cover;
+  margin-bottom: 16px;
+}
+.nl-title {
+  font-size: 24px;
   font-weight: 800;
   color: #1c1c1e;
   margin: 0 0 6px;
 }
-.new-login-subtitle {
+.nl-sub {
   font-size: 14px;
   color: #86868b;
-  margin: 0 0 28px;
+  margin: 0;
 }
-.new-login-fields {
-  width: 100%;
+.nl-center {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  justify-content: center;
+  padding: 0 24px 40px;
+}
+.nl-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
   margin-bottom: 24px;
 }
-.new-login-input {
+.nl-input {
   width: 100%;
   padding: 16px;
   font-size: 15px;
   font-weight: 500;
   color: #1c1c1e;
-  background: #f2f2f7;
-  border: none;
+  background: #ffffff;
+  border: 1.5px solid #d1d1d6;
   border-radius: 14px;
   outline: none;
   box-sizing: border-box;
 }
-.new-login-input::placeholder {
-  color: #8e8e93;
+.nl-input::placeholder { color: #8e8e93; }
+.nl-input:focus { border-color: #007aff; }
+.nl-pass-wrap {
+  position: relative;
 }
-.new-login-input:focus {
-  box-shadow: 0 0 0 2px #007aff;
+.nl-pass-input {
+  padding-right: 50px;
 }
-.new-login-buttons {
-  width: 100%;
+.nl-eye {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+}
+.nl-btns {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
-.new-login-btn-primary {
+.nl-btn-primary {
   width: 100%;
   padding: 18px;
   font-size: 17px;
@@ -82,29 +112,21 @@ input:focus, select:focus { outline:none; }
   border: none;
   border-radius: 14px;
   cursor: pointer;
-  transition: opacity 0.2s;
 }
-.new-login-btn-primary:active {
-  opacity: 0.8;
-}
-.new-login-btn-primary:disabled {
-  opacity: 0.5;
-}
-.new-login-btn-secondary {
+.nl-btn-primary:active { opacity: 0.8; }
+.nl-btn-primary:disabled { opacity: 0.5; }
+.nl-btn-secondary {
   width: 100%;
   padding: 18px;
   font-size: 17px;
   font-weight: 700;
   color: #1c1c1e;
-  background: #f2f2f7;
-  border: 2px solid #e5e5ea;
+  background: #ffffff;
+  border: 1.5px solid #d1d1d6;
   border-radius: 14px;
   cursor: pointer;
-  transition: opacity 0.2s;
 }
-.new-login-btn-secondary:active {
-  opacity: 0.8;
-}
+.nl-btn-secondary:active { opacity: 0.8; }
 
 
 /* ========== HOME LAYOUT ========== */
@@ -452,9 +474,9 @@ button, .btn { -webkit-tap-highlight-color:transparent; }
 
 /* ========== RESPONSIVE FIXES ========== */
 @media (max-width:380px) {
-    .new-login-title { font-size:22px; }
-    .new-login-input { padding:14px; font-size:14px; }
-    .new-login-btn-primary, .new-login-btn-secondary { padding:16px; font-size:16px; }
+    .nl-title { font-size: 20px; }
+    .nl-input { padding: 14px; font-size: 14px; }
+    .nl-btn-primary, .nl-btn-secondary { padding: 16px; font-size: 16px; }
     .quick-actions { grid-template-columns:1fr 1fr; }
     .games-grid { gap:8px; }
     .game-card { border-radius:12px; }
@@ -517,7 +539,7 @@ button, .btn { -webkit-tap-highlight-color:transparent; }
 }
 
 @media (min-width:768px) {
-    .new-login-content { max-width: 400px; margin: 0 auto; }
+    .nl-center { max-width: 400px; margin: 0 auto; }
     .games-grid { max-width:500px; margin:0 auto; gap:16px; }
     .game-card { border-radius:20px; }
     .game-name { font-size:16px; padding:12px 10px 4px; }
@@ -530,8 +552,8 @@ button, .btn { -webkit-tap-highlight-color:transparent; }
 }
 
 @media (max-height:600px) {
-    .new-login-input { padding:12px; font-size:13px; }
-    .new-login-btn-primary, .new-login-btn-secondary { padding:14px; font-size:14px; }
+    .nl-input { padding:12px; font-size:13px; }
+    .nl-btn-primary, .nl-btn-secondary { padding:14px; font-size:14px; }
     .profile-card { padding:16px; }
     .profile-avatar { width:60px; height:60px; font-size:26px; }
     .pa-item { padding:12px 14px; font-size:14px; }

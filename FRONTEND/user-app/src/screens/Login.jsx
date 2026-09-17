@@ -6,12 +6,11 @@ import { auth, db } from '../firebase.js';
 export default function Login({ toast }) {
   const [mode, setMode] = useState('login');
   const [busy, setBusy] = useState(false);
+  const [showPass, setShowPass] = useState(false);
 
-  // Login fields
   const [loginMobile, setLoginMobile] = useState('');
   const [loginPass, setLoginPass] = useState('');
 
-  // Register fields
   const [regName, setRegName] = useState('');
   const [regMobile, setRegMobile] = useState('');
   const [regPass, setRegPass] = useState('');
@@ -29,8 +28,7 @@ export default function Login({ toast }) {
 
     setBusy(true);
     try {
-      const fakeEmail = mobile + '@lrc.app';
-      await signInWithEmailAndPassword(auth, fakeEmail, pass);
+      await signInWithEmailAndPassword(auth, mobile + '@lrc.app', pass);
       toast('Login ho gaya!', '#34c759');
     } catch (err) {
       const code = err.code || '';
@@ -62,8 +60,7 @@ export default function Login({ toast }) {
         return;
       }
 
-      const fakeEmail = mobile + '@lrc.app';
-      const cred = await createUserWithEmailAndPassword(auth, fakeEmail, pass);
+      const cred = await createUserWithEmailAndPassword(auth, mobile + '@lrc.app', pass);
       const uid = cred.user.uid;
       const userId = generateUserId();
 
@@ -74,19 +71,9 @@ export default function Login({ toast }) {
       }
 
       await setDoc(doc(db, 'users', uid), {
-        name,
-        mobile,
-        userId,
-        balance: 0,
-        totalDeposit: 0,
-        totalWithdraw: 0,
-        totalWin: 0,
-        status: 'active',
-        referralCode: userId,
-        referredBy: referredBy || '',
-        referralCommission: 0,
-        kycStatus: 'none',
-        createdAt: new Date().toISOString(),
+        name, mobile, userId, balance: 0, totalDeposit: 0, totalWithdraw: 0, totalWin: 0,
+        status: 'active', referralCode: userId, referredBy: referredBy || '',
+        referralCommission: 0, kycStatus: 'none', createdAt: new Date().toISOString(),
       });
 
       toast('Account ban gaya! Login karo.', '#34c759');
@@ -105,56 +92,55 @@ export default function Login({ toast }) {
   if (mode === 'register') {
     return (
       <div className="new-login-page">
-        <div className="new-login-content">
-          <img
-            src="./logo.png"
-            alt="Ludo Royal Club"
-            style={{ width: 80, height: 80, borderRadius: 20, objectFit: 'cover', marginBottom: 16 }}
-          />
+        {/* TOP: Logo + Title */}
+        <div className="new-login-top">
+          <img src="./logo.png" alt="LRC" className="new-login-logo" />
           <h1 className="new-login-title">Create Account</h1>
           <p className="new-login-subtitle">Register to start playing</p>
+        </div>
 
-          <div className="new-login-fields">
-            <input
-              type="text"
-              placeholder="Username"
-              value={regName}
-              onChange={(e) => setRegName(e.target.value)}
-              className="new-login-input"
-            />
-            <input
-              type="tel"
-              placeholder="Mobile Number"
-              value={regMobile}
-              onChange={(e) => setRegMobile(e.target.value.replace(/[^0-9]/g, ''))}
-              maxLength={10}
-              inputMode="numeric"
-              className="new-login-input"
-            />
-            <input
-              type="password"
-              placeholder="Set Password"
-              value={regPass}
-              onChange={(e) => setRegPass(e.target.value)}
-              className="new-login-input"
-            />
-            <input
-              type="text"
-              placeholder="Referral Code (Optional)"
-              value={regReferral}
-              onChange={(e) => setRegReferral(e.target.value.replace(/[^0-9]/g, ''))}
-              className="new-login-input"
-            />
-          </div>
+        {/* CENTER: Fields */}
+        <div className="new-login-center">
+          <input type="text" placeholder="Username" value={regName}
+            onChange={(e) => setRegName(e.target.value)} className="new-login-input" />
 
-          <div className="new-login-buttons">
-            <button className="new-login-btn-primary" onClick={handleRegister} disabled={busy}>
-              {busy ? 'Creating...' : 'Create Account'}
-            </button>
-            <button className="new-login-btn-secondary" onClick={() => setMode('login')}>
-              Login
+          <input type="tel" placeholder="Mobile Number" value={regMobile}
+            onChange={(e) => setRegMobile(e.target.value.replace(/[^0-9]/g, ''))}
+            maxLength={10} inputMode="numeric" className="new-login-input" />
+
+          <div className="new-login-pass-wrap">
+            <input type={showPass ? 'text' : 'password'} placeholder="Set Password" value={regPass}
+              onChange={(e) => setRegPass(e.target.value)} className="new-login-input" />
+            <button type="button" className="new-login-eye" onClick={() => setShowPass(!showPass)}>
+              {showPass ? (
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                  <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
+                  <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+              ) : (
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              )}
             </button>
           </div>
+
+          <input type="tel" placeholder="Referral Code (Optional)" value={regReferral}
+            onChange={(e) => setRegReferral(e.target.value.replace(/[^0-9]/g, ''))}
+            className="new-login-input" />
+        </div>
+
+        {/* BOTTOM: Buttons */}
+        <div className="new-login-bottom">
+          <button className="new-login-btn-primary" onClick={handleRegister} disabled={busy}>
+            {busy ? 'Creating...' : 'Create Account'}
+          </button>
+          <button className="new-login-btn-secondary" onClick={() => { setMode('login'); setShowPass(false); }}>
+            Login
+          </button>
         </div>
       </div>
     );
@@ -163,42 +149,48 @@ export default function Login({ toast }) {
   // LOGIN
   return (
     <div className="new-login-page">
-      <div className="new-login-content">
-        <img
-          src="./logo.png"
-          alt="Ludo Royal Club"
-          style={{ width: 100, height: 100, borderRadius: 24, objectFit: 'cover', marginBottom: 20 }}
-        />
+      {/* TOP: Logo + Title */}
+      <div className="new-login-top">
+        <img src="./logo.png" alt="LRC" className="new-login-logo" />
         <h1 className="new-login-title">Ludo Royal Club</h1>
         <p className="new-login-subtitle">Login to continue playing</p>
+      </div>
 
-        <div className="new-login-fields">
-          <input
-            type="tel"
-            placeholder="Mobile Number"
-            value={loginMobile}
-            onChange={(e) => setLoginMobile(e.target.value.replace(/[^0-9]/g, ''))}
-            maxLength={10}
-            inputMode="numeric"
-            className="new-login-input"
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={loginPass}
-            onChange={(e) => setLoginPass(e.target.value)}
-            className="new-login-input"
-          />
-        </div>
+      {/* CENTER: Fields */}
+      <div className="new-login-center">
+        <input type="tel" placeholder="Mobile Number" value={loginMobile}
+          onChange={(e) => setLoginMobile(e.target.value.replace(/[^0-9]/g, ''))}
+          maxLength={10} inputMode="numeric" className="new-login-input" />
 
-        <div className="new-login-buttons">
-          <button className="new-login-btn-primary" onClick={handleLogin} disabled={busy}>
-            {busy ? 'Logging in...' : 'Login'}
-          </button>
-          <button className="new-login-btn-secondary" onClick={() => setMode('register')}>
-            Create Account
+        <div className="new-login-pass-wrap">
+          <input type={showPass ? 'text' : 'password'} placeholder="Password" value={loginPass}
+            onChange={(e) => setLoginPass(e.target.value)} className="new-login-input" />
+          <button type="button" className="new-login-eye" onClick={() => setShowPass(!showPass)}>
+            {showPass ? (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
+              </svg>
+            ) : (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            )}
           </button>
         </div>
+      </div>
+
+      {/* BOTTOM: Buttons */}
+      <div className="new-login-bottom">
+        <button className="new-login-btn-primary" onClick={handleLogin} disabled={busy}>
+          {busy ? 'Logging in...' : 'Login'}
+        </button>
+        <button className="new-login-btn-secondary" onClick={() => { setMode('register'); setShowPass(false); }}>
+          Create Account
+        </button>
       </div>
     </div>
   );
