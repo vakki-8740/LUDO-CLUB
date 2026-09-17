@@ -48,7 +48,13 @@ export default function UtrPage({ amount, uid, profile, toast, go }) {
       <div className="section active">
         <TopBar title="Request Submitted" onBack={() => go('home')} />
         <div className="deposit-page-card" style={{ textAlign: 'center', padding: '30px 20px' }}>
-          <div style={{ fontSize: 60, marginBottom: 16 }}>&#9989;</div>
+          <div style={{ marginBottom: 16 }}>
+            <svg width="70" height="70" viewBox="0 0 70 70" fill="none">
+              <circle cx="35" cy="35" r="35" fill="#34c759" opacity="0.12"/>
+              <circle cx="35" cy="35" r="25" fill="#34c759"/>
+              <path d="M25 36L31 42L46 27" stroke="#fff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
           <div style={{ fontSize: 20, fontWeight: 800, color: '#1c1c1e', marginBottom: 12, lineHeight: 1.3 }}>
             Request Submitted Successfully
           </div>
@@ -73,7 +79,15 @@ export default function UtrPage({ amount, uid, profile, toast, go }) {
       <TopBar title="Enter UTR Number" onBack={() => go('qr:' + amt)} />
       <div className="deposit-page-card" style={{ padding: '24px 20px' }}>
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
-          <div style={{ fontSize: 50, marginBottom: 12 }}>&#128179;</div>
+          <div style={{ marginBottom: 12 }}>
+            <svg width="55" height="55" viewBox="0 0 55 55" fill="none">
+              <rect x="5" y="14" width="45" height="30" rx="4" fill="#667eea"/>
+              <rect x="5" y="14" width="45" height="8" rx="4" fill="#764ba2"/>
+              <circle cx="27.5" cy="33" r="5" stroke="#fff" strokeWidth="2"/>
+              <line x1="27.5" y1="28" x2="27.5" y2="22" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
+              <line x1="27.5" y1="38" x2="27.5" y2="44" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </div>
           <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>UTR Number Dalo</div>
           <div style={{ fontSize: 13, color: '#86868b' }}>Amount: <strong>₹{amt}</strong></div>
         </div>
