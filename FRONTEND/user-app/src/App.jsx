@@ -160,33 +160,19 @@ export default function App() {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
 
-  // Auth + profile (fast: pehle callback par splash hatao)
+  // Auth + profile (localStorage se - PHP backend)
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (g) => {
-      setAuthChecked(true);
-      if (!g) {
-        setUser(null);
-        setProfile(null);
-        return;
-      }
+    const saved = localStorage.getItem('lrc_user');
+    if (saved) {
       try {
-        const data = await ensureUserDoc(g);
-        setUser(g);
-        setProfile({ ...data });
+        const userData = JSON.parse(saved);
+        setUser(userData);
+        setProfile(userData);
       } catch (e) {
-        const msg = (e && e.message) || 'Login failed';
-        toast(
-          msg.includes('permission') || msg.includes('PERMISSION')
-            ? 'Database permission error: Firestore Rules publish karo.'
-            : msg,
-          '#ff3b30'
-        );
-        try {
-          await auth.signOut();
-        } catch (err) {}
+        localStorage.removeItem('lrc_user');
       }
-    });
-    return unsub;
+    }
+    setAuthChecked(true);
   }, [toast]);
 
   // Realtime bets
@@ -204,13 +190,20 @@ export default function App() {
     return unsub;
   }, [user]);
 
-  // Live profile (admin balance change turant)
+  // Live profile (PHP backend se refresh)
   useEffect(() => {
     if (!user) return;
-    const unsub = onSnapshot(doc(db, 'users', user.uid), (snap) => {
-      if (snap.exists()) setProfile(snap.data());
-    });
-    return unsub;
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch('https://php-vakki-8740.wasmer.app/user.php?uid=' + user.uid);
+        const data = await res.json();
+        if (data.success) {
+          setProfile(data);
+          localStorage.setItem('lrc_user', JSON.stringify({ ...user, ...data }));
+        }
+      } catch (e) {}
+    }, 10000); // Har 10 sec refresh
+    return () => clearInterval(interval);
   }, [user]);
 
   // AUTO-OPEN match page:

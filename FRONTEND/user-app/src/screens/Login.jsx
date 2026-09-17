@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc, query, collection, where, getDocs } from 'firebase/firestore';
-import { auth, db } from '../firebase.js';
+
+const BACKEND_URL = 'https://php-vakki-8740.wasmer.app';
 
 // SVG Icons
 const PhoneIcon = () => (
@@ -64,10 +63,6 @@ export default function Login({ toast }) {
   const [regPass, setRegPass] = useState('');
   const [regReferral, setRegReferral] = useState('');
 
-  function generateUserId() {
-    return String(Math.floor(10000 + Math.random() * 90000));
-  }
-
   async function handleLogin() {
     const mobile = loginMobile.trim();
     const pass = loginPass.trim();
@@ -76,16 +71,22 @@ export default function Login({ toast }) {
 
     setBusy(true);
     try {
-      await signInWithEmailAndPassword(auth, mobile + '@lrc.app', pass);
-      toast('Login ho gaya!', '#34c759');
-    } catch (err) {
-      console.log('LOGIN ERROR:', err);
-      const code = err.code || '';
-      if (code === 'auth/user-not-found') toast('Account nahi mila. Pehle register karo.', '#ff3b30');
-      else if (code === 'auth/wrong-password') toast('Galat password', '#ff3b30');
-      else if (code === 'auth/invalid-credential') toast('Mobile ya password galat hai', '#ff3b30');
-      else if (code === 'auth/operation-not-allowed') toast('Email/Password login band hai. Firebase Console mein enable karo.', '#ff3b30');
-      else toast('Login failed: ' + (err.message || code), '#ff3b30');
+      const res = await fetch(BACKEND_URL + '/login.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mobile, password: pass }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        // Save user data locally
+        localStorage.setItem('lrc_user', JSON.stringify(data));
+        toast('Login ho gaya!', '#34c759');
+        window.location.reload();
+      } else {
+        toast(data.error || 'Login failed', '#ff3b30');
+      }
+    } catch (e) {
+      toast('Network error', '#ff3b30');
     } finally {
       setBusy(false);
     }
@@ -103,45 +104,25 @@ export default function Login({ toast }) {
 
     setBusy(true);
     try {
-      const existCheck = await getDocs(query(collection(db, 'users'), where('mobile', '==', mobile)));
-      if (!existCheck.empty) {
-        toast('Ye mobile number pehle se registered hai', '#ff3b30');
-        setBusy(false);
-        return;
-      }
-
-      console.log('Step 1: Creating auth user...');
-      const cred = await createUserWithEmailAndPassword(auth, mobile + '@lrc.app', pass);
-      const uid = cred.user.uid;
-      const userId = generateUserId();
-      console.log('Step 2: Auth user created, UID:', uid);
-
-      let referredBy = '';
-      if (referral) {
-        const refSnap = await getDocs(query(collection(db, 'users'), where('referralCode', '==', referral)));
-        if (!refSnap.empty) referredBy = referral;
-      }
-
-      console.log('Step 3: Writing to Firestore...');
-      await setDoc(doc(db, 'users', uid), {
-        name, mobile, userId, balance: 0, totalDeposit: 0, totalWithdraw: 0, totalWin: 0,
-        status: 'active', referralCode: userId, referredBy: referredBy || '',
-        referralCommission: 0, kycStatus: 'none', createdAt: new Date().toISOString(),
+      const res = await fetch(BACKEND_URL + '/register.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, mobile, password: pass, referral_code: referral }),
       });
-      console.log('Step 4: Firestore write done!');
-
-      toast('Account ban gaya! Ab login karo.', '#34c759');
-      const { signOut } = await import('firebase/auth');
-      await signOut(auth);
-      setMode('login');
-      setLoginMobile(mobile);
-    } catch (err) {
-      console.log('REGISTER ERROR:', err);
-      const code = err.code || '';
-      if (code === 'auth/email-already-in-use') toast('Ye mobile pehle se registered hai', '#ff3b30');
-      else if (code === 'auth/weak-password') toast('Password kamzor hai', '#ff3b30');
-      else if (code === 'auth/operation-not-allowed') toast('Email/Password login band hai. Firebase Console mein enable karo.', '#ff3b30');
-      else toast('Register failed: ' + (err.message || code), '#ff3b30');
+      const data = await res.json();
+      if (data.success) {
+        toast('Account ban gaya! Ab login karo.', '#34c759');
+        setMode('login');
+        setLoginMobile(mobile);
+        setRegName('');
+        setRegMobile('');
+        setRegPass('');
+        setRegReferral('');
+      } else {
+        toast(data.error || 'Register failed', '#ff3b30');
+      }
+    } catch (e) {
+      toast('Network error', '#ff3b30');
     } finally {
       setBusy(false);
     }
@@ -247,10 +228,7 @@ export default function Login({ toast }) {
   );
 }
 
-export async function logoutAll() {
-  try {
-    const { signOut } = await import('firebase/auth');
-    const { auth } = await import('../firebase.js');
-    await signOut(auth);
-  } catch (e) {}
+export function logoutAll() {
+  localStorage.removeItem('lrc_user');
+  window.location.reload();
 }

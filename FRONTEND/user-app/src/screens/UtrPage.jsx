@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { TopBar } from '../components/ui.jsx';
-import { db } from '../firebase.js';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+
+const BACKEND_URL = 'https://php-vakki-8740.wasmer.app';
 
 export default function UtrPage({ amount, uid, profile, toast, go }) {
   const [utr, setUtr] = useState('');
@@ -21,24 +21,24 @@ export default function UtrPage({ amount, uid, profile, toast, go }) {
 
     setLoading(true);
     try {
-      const orderId = 'LRC_' + uid + '_' + Date.now();
-      await setDoc(doc(db, 'transactions', orderId), {
-        userId: uid,
-        userName: profile?.name || 'Player',
-        type: 'Deposit',
-        amount: amt,
-        status: 'Pending',
-        paymentId: orderId,
-        utr: utr.trim(),
-        method: 'manual_upi',
-        date: new Date().toLocaleDateString('en-IN'),
-        time: new Date().toLocaleTimeString('en-IN'),
-        timestamp: serverTimestamp(),
-        createdAt: serverTimestamp(),
+      const res = await fetch(BACKEND_URL + '/transactions.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uid: uid,
+          user_name: profile?.name || 'Player',
+          amount: amt,
+          utr: utr.trim(),
+        }),
       });
-      setShowPopup(true);
+      const data = await res.json();
+      if (data.success) {
+        setShowPopup(true);
+      } else {
+        toast(data.error || 'Submit failed', '#ff3b30');
+      }
     } catch (e) {
-      toast('Error: ' + e.message, '#ff3b30');
+      toast('Network error', '#ff3b30');
     } finally {
       setLoading(false);
     }

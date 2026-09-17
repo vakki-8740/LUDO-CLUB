@@ -1,30 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase.js';
+import React, { useState } from 'react';
 import { TopBar } from '../components/ui.jsx';
 
 const DEFAULT_AMOUNTS = [10, 20, 50, 100, 200, 500, 1000];
-const BACKEND_URL = 'https://php-vakki-8740.wasmer.app';
 
 export default function Deposit({ profile, uid, toast, go }) {
-  const [amounts, setAmounts] = useState(DEFAULT_AMOUNTS);
-  const [loading, setLoading] = useState(true);
+  const [amounts] = useState(DEFAULT_AMOUNTS);
   const [customAmount, setCustomAmount] = useState('');
   const [selectedAmt, setSelectedAmt] = useState(null);
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const appDoc = await getDoc(doc(db, 'settings', 'app'));
-        if (appDoc.exists() && appDoc.data().depositOptions) {
-          const arr = String(appDoc.data().depositOptions).split(',').map(x => parseInt(x)).filter(x => x > 0);
-          if (arr.length) setAmounts(arr);
-        }
-      } catch (e) {}
-      setLoading(false);
-    }
-    load();
-  }, []);
 
   function handleProceed() {
     const amt = selectedAmt || parseInt(customAmount);
@@ -39,24 +21,18 @@ export default function Deposit({ profile, uid, toast, go }) {
     <div className="section active">
       <TopBar title="Deposit Money" onBack={() => go('wallet')} />
       <div className="deposit-page-card">
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: 30 }}>
-            <span className="loader-dot" style={{ width: 24, height: 24 }}></span>
-          </div>
-        ) : (
-          <>
-            <div className="dp-label">Select Amount</div>
-            <div className="dp-chips">
-              {amounts.map((amt) => (
-                <div
-                  key={amt}
-                  className={`dp-chip ${selectedAmt === amt ? 'selected' : ''}`}
-                  onClick={() => { setSelectedAmt(amt); setCustomAmount(''); }}
-                >
-                  ₹{amt}
-                </div>
-              ))}
+        <div className="dp-label">Select Amount</div>
+        <div className="dp-chips">
+          {amounts.map((amt) => (
+            <div
+              key={amt}
+              className={`dp-chip ${selectedAmt === amt ? 'selected' : ''}`}
+              onClick={() => { setSelectedAmt(amt); setCustomAmount(''); }}
+            >
+              ₹{amt}
             </div>
+          ))}
+        </div>
 
             <div style={{ marginTop: 16 }}>
               <div className="dp-label">Ya Amount Likho</div>
@@ -75,8 +51,6 @@ export default function Deposit({ profile, uid, toast, go }) {
             <button className="dp-btn" onClick={handleProceed} style={{ marginTop: 16 }}>
               <i className="fas fa-qrcode"></i> Proceed to Pay
             </button>
-          </>
-        )}
       </div>
     </div>
   );
