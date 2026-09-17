@@ -60,7 +60,7 @@ try {
 
     // Already credited?
     if (($txn['status'] ?? '') === 'Success') {
-        header('Location: ' . $frontend . '/?payment_id=' . $paymentId);
+        header('Location: ' . $frontend . '/#payqr?payment_id=' . $paymentId);
         exit;
     }
 
@@ -92,12 +92,12 @@ try {
                 ]],
             ]);
 
-            header('Location: ' . $frontend . '/?payment_id=' . $paymentId);
+            header('Location: ' . $frontend . '/#payqr?payment_id=' . $paymentId);
         } else {
-            header('Location: ' . $frontend . '/?payment_id=' . $paymentId);
+            header('Location: ' . $frontend . '/#payqr?payment_id=' . $paymentId);
         }
     } else {
-        header('Location: ' . $frontend . '/?payment_id=' . $paymentId);
+        header('Location: ' . $frontend . '/#payqr?payment_id=' . $paymentId);
     }
 
 } catch (Exception $e) {

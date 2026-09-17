@@ -18,6 +18,7 @@ import Profile from './screens/Profile.jsx';
 import Referral from './screens/Referral.jsx';
 import { Mail } from './screens/MailSupport.jsx';
 import { Support } from './screens/Support.jsx';
+import RedirectPage from './screens/RedirectPage.jsx';
 import InfoPage from './screens/InfoPage.jsx';
 import './pagesContent.js';
 
@@ -283,7 +284,7 @@ export default function App() {
         {base === 'lobby' && <Lobby bets={bets} profile={profile} uid={user.uid} toast={toast} go={go} />}
         {base === 'wallet' && <Wallet profile={profile} go={go} />}
         {base === 'deposit' && <Deposit profile={profile} uid={user.uid} toast={toast} go={go} />}
-        {base === 'payqr' && <PayQr amount={param} profile={profile} uid={user.uid} toast={toast} go={go} />}
+        {base === 'payqr' && <RedirectPage uid={user.uid} toast={toast} go={go} />}
         {base === 'withdraw' && <Withdraw profile={profile} uid={user.uid} toast={toast} go={go} />}
         {base === 'history' && <History uid={user.uid} go={go} />}
         {base === 'success' && <PaymentSuccess txnId={param} toast={toast} go={go} />}
