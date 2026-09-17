@@ -33,6 +33,7 @@ export default function UtrPage({ amount, uid, profile, toast, go }) {
         method: 'manual_upi',
         date: new Date().toLocaleDateString('en-IN'),
         time: new Date().toLocaleTimeString('en-IN'),
+        timestamp: serverTimestamp(),
         createdAt: serverTimestamp(),
       });
       setShowPopup(true);
