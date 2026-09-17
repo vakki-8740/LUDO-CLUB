@@ -8,7 +8,7 @@ import Splash from './screens/Splash.jsx';
 import Home from './screens/Home.jsx';
 import Lobby from './screens/Lobby.jsx';
 import Wallet from './screens/Wallet.jsx';
-import Deposit, { PayQr } from './screens/Deposit.jsx';
+import Deposit from './screens/Deposit.jsx';
 import Withdraw from './screens/Withdraw.jsx';
 import History from './screens/History.jsx';
 import PaymentSuccess from './screens/PaymentSuccess.jsx';
@@ -18,7 +18,8 @@ import Profile from './screens/Profile.jsx';
 import Referral from './screens/Referral.jsx';
 import { Mail } from './screens/MailSupport.jsx';
 import { Support } from './screens/Support.jsx';
-import RedirectPage from './screens/RedirectPage.jsx';
+import QrPage from './screens/QrPage.jsx';
+import UtrPage from './screens/UtrPage.jsx';
 import InfoPage from './screens/InfoPage.jsx';
 import './pagesContent.js';
 
@@ -131,24 +132,6 @@ export default function App() {
   }
 
   const canInstall = !!installEvt || (isIOS && !isInstalled);
-
-  // Payment callback: ?pay=txnId ya ?payment_id=xxx -> success page
-  useEffect(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const pay = params.get('pay');
-      const paymentId = params.get('payment_id');
-
-      if (paymentId) {
-        // ZEROTIXE callback - payment verify karo
-        setScreen('payqr:' + paymentId);
-        window.history.replaceState({}, '', window.location.pathname);
-      } else if (pay) {
-        setScreen('success:' + String(pay).trim().slice(0, 40));
-        window.history.replaceState({}, '', window.location.pathname);
-      }
-    } catch (e) {}
-  }, []);
 
   const toast = useCallback((msg, bg) => {
     setToastMsg({ msg, bg: bg || 'rgba(28,28,30,0.95)' });
@@ -284,7 +267,8 @@ export default function App() {
         {base === 'lobby' && <Lobby bets={bets} profile={profile} uid={user.uid} toast={toast} go={go} />}
         {base === 'wallet' && <Wallet profile={profile} go={go} />}
         {base === 'deposit' && <Deposit profile={profile} uid={user.uid} toast={toast} go={go} />}
-        {base === 'payqr' && <RedirectPage uid={user.uid} toast={toast} go={go} />}
+        {base === 'qr' && <QrPage amount={param} uid={user.uid} toast={toast} go={go} />}
+        {base === 'utr' && <UtrPage amount={param} uid={user.uid} profile={profile} toast={toast} go={go} />}
         {base === 'withdraw' && <Withdraw profile={profile} uid={user.uid} toast={toast} go={go} />}
         {base === 'history' && <History uid={user.uid} go={go} />}
         {base === 'success' && <PaymentSuccess txnId={param} toast={toast} go={go} />}
