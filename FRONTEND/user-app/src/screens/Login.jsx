@@ -126,7 +126,10 @@ export default function Login({ toast }) {
         referralCommission: 0, kycStatus: 'none', createdAt: new Date().toISOString(),
       });
 
-      toast('Account ban gaya! Login karo.', '#34c759');
+      toast('Account ban gaya! Ab login karo.', '#34c759');
+      // Firebase auth sign out karo taaki login page pe ja sake
+      const { signOut } = await import('firebase/auth');
+      await signOut(auth);
       setMode('login');
       setLoginMobile(mobile);
     } catch (err) {
