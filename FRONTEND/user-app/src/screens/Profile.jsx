@@ -1,5 +1,7 @@
 import React from 'react';
 import { TopBar } from '../components/ui.jsx';
+import { winAmount } from './Wallet.jsx';
+import { logoutAll } from './Login.jsx';
 
 export default function Profile({ profile, uid, toast, go, onLogout }) {
   const logo = profile.profileLogo || profile.photoURL;
@@ -8,11 +10,6 @@ export default function Profile({ profile, uid, toast, go, onLogout }) {
     const name = prompt('Enter new name:', profile.name || '');
     if (name && name.trim()) {
       try {
-        const res = await fetch('https://php-vakki-8740.wasmer.app/wallet.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ uid, action: 'set', amount: profile.balance || 0 }),
-        });
         toast('Name updated!', '#34c759');
       } catch (e) {
         toast('Error: ' + e.message, '#ff3b30');
@@ -21,7 +18,7 @@ export default function Profile({ profile, uid, toast, go, onLogout }) {
   }
 
   function logout() {
-    localStorage.removeItem('lrc_user');
+    logoutAll();
     onLogout();
   }
 
@@ -33,42 +30,93 @@ export default function Profile({ profile, uid, toast, go, onLogout }) {
           {logo ? (
             <img src={logo} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} alt="" />
           ) : (
-            <span>{(profile.name || '?')[0].toUpperCase()}</span>
+            (profile.name || '?')[0].toUpperCase()
           )}
         </div>
-        <h2 className="profile-name">{profile.name || 'Player'}</h2>
-        <div className="profile-id">ID: {profile.uid || uid}</div>
+        <div className="profile-name">{profile.name || 'User'}</div>
+        <div className="profile-id">ID: {profile.userId || profile.uid || '---'}</div>
       </div>
 
-      <div className="profile-actions">
+      <div className="profile-stats-card">
+        <div className="p-stat">
+          <div className="p-stat-icon green"><i className="fas fa-arrow-down"></i></div>
+          <span className="p-stat-label">Deposit</span>
+          <strong>₹{profile.total_deposit || profile.totalDeposit || 0}</strong>
+        </div>
+        <div className="p-stat-divider"></div>
+        <div className="p-stat">
+          <div className="p-stat-icon red"><i className="fas fa-arrow-up"></i></div>
+          <span className="p-stat-label">Withdraw</span>
+          <strong>₹{profile.total_withdraw || profile.totalWithdraw || 0}</strong>
+        </div>
+        <div className="p-stat-divider"></div>
+        <div className="p-stat">
+          <div className="p-stat-icon orange"><i className="fas fa-trophy"></i></div>
+          <span className="p-stat-label">Win</span>
+          <strong>₹{winAmount(profile)}</strong>
+        </div>
+      </div>
+
+      <div className="profile-actions" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div className="pa-item" onClick={editName}>
-          <i className="fas fa-user-edit"></i>
-          <span>Edit Name</span>
-          <i className="fas fa-chevron-right"></i>
+          <div style={{ width: 46, height: 46, borderRadius: 12, background: 'rgba(0,122,255,0.12)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
+            <i className="fas fa-edit"></i>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 15, fontWeight: 700 }}>Edit Name</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Apna naam badlo</div>
+          </div>
+          <i className="fas fa-chevron-right" style={{ color: 'var(--text-muted)' }}></i>
         </div>
         <div className="pa-item" onClick={() => go('kyc')}>
-          <i className="fas fa-id-card"></i>
-          <span>KYC Verification</span>
-          <i className="fas fa-chevron-right"></i>
+          <div style={{ width: 46, height: 46, borderRadius: 12, background: 'rgba(255,149,0,0.12)', color: 'var(--warning)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
+            <i className="fas fa-id-card"></i>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 15, fontWeight: 700 }}>KYC Verification</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Aadhaar + mobile submit karo</div>
+          </div>
+          <i className="fas fa-chevron-right" style={{ color: 'var(--text-muted)' }}></i>
         </div>
         <div className="pa-item" onClick={() => go('history')}>
-          <i className="fas fa-history"></i>
-          <span>Transaction History</span>
-          <i className="fas fa-chevron-right"></i>
+          <div style={{ width: 46, height: 46, borderRadius: 12, background: 'rgba(52,199,89,0.12)', color: 'var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
+            <i className="fas fa-history"></i>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 15, fontWeight: 700 }}>Transaction History</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Saari transactions dekho</div>
+          </div>
+          <i className="fas fa-chevron-right" style={{ color: 'var(--text-muted)' }}></i>
         </div>
         <div className="pa-item" onClick={() => go('referral')}>
-          <i className="fas fa-gift"></i>
-          <span>Referral</span>
-          <i className="fas fa-chevron-right"></i>
+          <div style={{ width: 46, height: 46, borderRadius: 12, background: 'rgba(175,82,222,0.12)', color: '#af52de', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
+            <i className="fas fa-gift"></i>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 15, fontWeight: 700 }}>Referral</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Doston ko invite karo</div>
+          </div>
+          <i className="fas fa-chevron-right" style={{ color: 'var(--text-muted)' }}></i>
         </div>
         <div className="pa-item" onClick={() => go('support')}>
-          <i className="fas fa-headset"></i>
-          <span>Support</span>
-          <i className="fas fa-chevron-right"></i>
+          <div style={{ width: 46, height: 46, borderRadius: 12, background: 'rgba(0,199,190,0.12)', color: '#00c7be', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
+            <i className="fas fa-headset"></i>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 15, fontWeight: 700 }}>Support</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Help chahiye?</div>
+          </div>
+          <i className="fas fa-chevron-right" style={{ color: 'var(--text-muted)' }}></i>
         </div>
-        <div className="pa-item" onClick={logout} style={{ color: '#ff3b30' }}>
-          <i className="fas fa-sign-out-alt"></i>
-          <span>Logout</span>
+        <div className="pa-item" onClick={logout}>
+          <div style={{ width: 46, height: 46, borderRadius: 12, background: 'rgba(255,59,48,0.12)', color: 'var(--danger)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
+            <i className="fas fa-sign-out-alt"></i>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 15, fontWeight: 700 }}>Logout</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Account se bahar niklo</div>
+          </div>
+          <i className="fas fa-chevron-right" style={{ color: 'var(--text-muted)' }}></i>
         </div>
       </div>
     </div>
