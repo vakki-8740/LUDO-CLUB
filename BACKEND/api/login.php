@@ -51,6 +51,7 @@ try {
         'total_win' => (int)$row['total_win'],
         'referral_code' => $row['referral_code'],
         'kyc_status' => $row['kyc_status'],
+        'profile_logo' => $row['profile_logo'] ?? '',
     ]);
 
 } catch (Exception $e) {

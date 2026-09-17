@@ -46,17 +46,32 @@ try {
         if ($refUser) $referredBy = $referralCode;
     }
 
+    // Random profile logo
+    $logos = [
+        'PROFILES-LOGO/photo_2026-09-02_16-25-41.jpg',
+        'PROFILES-LOGO/photo_2026-09-02_16-26-05.jpg',
+        'PROFILES-LOGO/photo_2026-09-02_16-26-06.jpg',
+        'PROFILES-LOGO/photo_2026-09-02_16-26-07.jpg',
+        'PROFILES-LOGO/photo_2026-09-02_16-26-23.jpg',
+        'PROFILES-LOGO/photo_2026-09-02_16-26-24.jpg',
+        'PROFILES-LOGO/photo_2026-09-02_16-26-26.jpg',
+        'PROFILES-LOGO/photo_2026-09-02_16-26-27.jpg',
+        'PROFILES-LOGO/photo_2026-09-02_16-26-29.jpg',
+    ];
+    $profile_logo = $logos[array_rand($logos)];
+
     // Hash password
     $hashedPass = password_hash($password, PASSWORD_DEFAULT);
 
     // Insert user
-    $stmt = $db->prepare("INSERT INTO users (uid, name, mobile, password, referral_code, referred_by) VALUES (:uid, :name, :mobile, :password, :referral_code, :referred_by)");
+    $stmt = $db->prepare("INSERT INTO users (uid, name, mobile, password, referral_code, referred_by, profile_logo) VALUES (:uid, :name, :mobile, :password, :referral_code, :referred_by, :profile_logo)");
     $stmt->bindValue(':uid', $uid, SQLITE3_TEXT);
     $stmt->bindValue(':name', $name, SQLITE3_TEXT);
     $stmt->bindValue(':mobile', $mobile, SQLITE3_TEXT);
     $stmt->bindValue(':password', $hashedPass, SQLITE3_TEXT);
     $stmt->bindValue(':referral_code', $userReferralCode, SQLITE3_TEXT);
     $stmt->bindValue(':referred_by', $referredBy, SQLITE3_TEXT);
+    $stmt->bindValue(':profile_logo', $profile_logo, SQLITE3_TEXT);
     $stmt->execute();
 
     echo json_encode([

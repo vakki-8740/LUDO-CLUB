@@ -32,6 +32,7 @@ function db_init($db) {
             referred_by TEXT DEFAULT '',
             referral_commission INTEGER DEFAULT 0,
             kyc_status TEXT DEFAULT 'none',
+            profile_logo TEXT DEFAULT '',
             status TEXT DEFAULT 'active',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )

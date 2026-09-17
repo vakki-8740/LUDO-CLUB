@@ -21,7 +21,7 @@ try {
     if ($uid === '') throw new Exception('uid required');
 
     $db = db_get();
-    $row = $db->querySingle("SELECT uid, name, mobile, balance, total_deposit, total_withdraw, total_win, referral_code, referred_by, referral_commission, kyc_status, status, created_at FROM users WHERE uid = '$uid' LIMIT 1", true);
+    $row = $db->querySingle("SELECT uid, name, mobile, balance, total_deposit, total_withdraw, total_win, referral_code, referred_by, referral_commission, kyc_status, profile_logo, status, created_at FROM users WHERE uid = '$uid' LIMIT 1", true);
 
     if (!$row) throw new Exception('User not found');
 
@@ -38,6 +38,7 @@ try {
         'referred_by' => $row['referred_by'],
         'referral_commission' => (int)$row['referral_commission'],
         'kyc_status' => $row['kyc_status'],
+        'profile_logo' => $row['profile_logo'] ?? '',
         'status' => $row['status'],
         'created_at' => $row['created_at'],
     ]);

@@ -89,7 +89,7 @@ export default function Profile({ profile, uid, toast, go, onLogout }) {
   const [showDetails, setShowDetails] = useState(false);
   const [editName, setEditName] = useState(profile?.name || '');
   const [saving, setSaving] = useState(false);
-  const logo = profile.profileLogo || profile.photoURL;
+  const logo = profile.profile_logo || profile.profileLogo || profile.photoURL;
 
   async function saveName() {
     const newName = editName.trim();
