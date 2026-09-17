@@ -24,17 +24,10 @@ input:focus, select:focus { outline:none; }
   background: #ffffff;
 }
 .nl-top {
-  padding: 60px 24px 30px;
+  padding: 70px 24px 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
-}
-.nl-logo {
-  width: 70px;
-  height: 70px;
-  border-radius: 18px;
-  object-fit: cover;
-  margin-bottom: 14px;
 }
 .nl-logo-lg {
   width: 90px;
@@ -59,57 +52,68 @@ input:focus, select:focus { outline:none; }
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 0 24px 40px;
+  padding: 0 24px;
 }
 .nl-card {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  margin-bottom: 24px;
+  gap: 16px;
+}
+.nl-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.nl-field-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #636366;
 }
 .nl-input {
   width: 100%;
-  padding: 16px;
+  padding: 14px 16px;
   font-size: 15px;
   font-weight: 500;
   color: #1c1c1e;
-  background: #ffffff;
-  border: 1.5px solid #d1d1d6;
-  border-radius: 14px;
+  background: #f2f2f7;
+  border: none;
+  border-radius: 12px;
   outline: none;
   box-sizing: border-box;
 }
 .nl-input::placeholder { color: #8e8e93; }
-.nl-input:focus { border-color: #007aff; }
+.nl-input:focus { box-shadow: 0 0 0 2px #007aff; }
 .nl-pass-wrap {
   position: relative;
 }
 .nl-pass-input {
-  padding-right: 50px;
+  padding-right: 48px;
 }
 .nl-eye {
   position: absolute;
-  right: 14px;
+  right: 10px;
   top: 50%;
   transform: translateY(-50%);
+  background: none;
+  border: none;
   cursor: pointer;
   padding: 4px;
   display: flex;
   align-items: center;
 }
-.nl-btns, .nl-bottom {
+.nl-btns {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 0 24px 40px;
-  max-width: 400px;
-  width: 100%;
-  margin: 0 auto;
+  padding-top: 24px;
 }
 .nl-btn-primary {
   width: 100%;
-  padding: 18px;
-  font-size: 17px;
+  padding: 16px;
+  font-size: 16px;
   font-weight: 700;
   color: #fff;
   background: #007aff;
@@ -121,8 +125,8 @@ input:focus, select:focus { outline:none; }
 .nl-btn-primary:disabled { opacity: 0.5; }
 .nl-btn-secondary {
   width: 100%;
-  padding: 18px;
-  font-size: 17px;
+  padding: 16px;
+  font-size: 16px;
   font-weight: 700;
   color: #1c1c1e;
   background: #ffffff;
