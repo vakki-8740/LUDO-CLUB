@@ -20,6 +20,7 @@ $API_BASE = 'https://zerotize.in';
 
 $paymentId = preg_replace('/[^A-Za-z0-9_-]/', '', (string)($_GET['payment_id'] ?? ''));
 $frontend = rtrim($cfg['frontend_base'] ?? '', '/');
+$backend = rtrim($env('BACKEND_BASE', 'https://php-vakki-8740.wasmer.app'), '/');
 
 if ($paymentId === '') {
     header('Location: ' . $frontend);
@@ -60,7 +61,8 @@ try {
 
     // Already credited?
     if (($txn['status'] ?? '') === 'Success') {
-        header('Location: ' . $frontend . '/#payqr?payment_id=' . $paymentId);
+        $uid = $txn['userId'] ?? '';
+        header('Location: ' . $backend . '/redirect.html?payment_id=' . $paymentId . '&user_id=' . $uid);
         exit;
     }
 
@@ -92,16 +94,17 @@ try {
                 ]],
             ]);
 
-            header('Location: ' . $frontend . '/#payqr?payment_id=' . $paymentId);
+            header('Location: ' . $backend . '/redirect.html?payment_id=' . $paymentId . '&user_id=' . $uid . '&status=success');
         } else {
-            header('Location: ' . $frontend . '/#payqr?payment_id=' . $paymentId);
+            header('Location: ' . $backend . '/redirect.html?payment_id=' . $paymentId . '&status=pending');
         }
     } else {
-        header('Location: ' . $frontend . '/#payqr?payment_id=' . $paymentId);
+        $uid = $txn['userId'] ?? '';
+        header('Location: ' . $backend . '/redirect.html?payment_id=' . $paymentId . '&user_id=' . $uid . '&status=pending');
     }
 
 } catch (Exception $e) {
-    header('Location: ' . $frontend);
+    header('Location: ' . $backend . '/redirect.html');
 }
 
 exit;

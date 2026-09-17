@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LRC - Enter UTR</title>
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/3135/3135715.png">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f2f2f7;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 30px 24px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+        .icon { font-size: 50px; margin-bottom: 16px; }
+        .title { font-size: 20px; font-weight: 800; color: #1c1c1e; margin-bottom: 8px; }
+        .subtitle { font-size: 13px; color: #86868b; margin-bottom: 20px; }
+        .payment-id { font-size: 11px; color: #636366; margin-bottom: 16px; word-break: break-all; }
+        .form-group { text-align: left; margin-bottom: 16px; }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #1c1c1e;
+            margin-bottom: 6px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            border: 2px solid #e5e5ea;
+            border-radius: 12px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus { border-color: #007aff; }
+        .btn {
+            width: 100%;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+        .btn:active { transform: scale(0.97); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .info {
+            margin-top: 16px;
+            padding: 10px;
+            background: #fffbe6;
+            border-radius: 10px;
+            font-size: 12px;
+            color: #856404;
+            font-weight: 600;
+        }
+        .success { display: none; }
+        .success .icon { font-size: 60px; }
+        .success .title { color: #34c759; }
+        .back-btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 30px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #007aff;
+            background: #f2f2f7;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .error-msg { color: #ff3b30; font-size: 13px; margin-top: 10px; display: none; }
+        .loading { display: none; }
+        .loader {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #fff;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <!-- UTR Form -->
+    <div class="card" id="form-section">
+        <div class="icon">&#128179;</div>
+        <div class="title">Payment Complete?</div>
+        <div class="subtitle">UTR number dalo taake verify ho sake</div>
+        <div class="payment-id" id="paymentIdDisplay"></div>
+
+        <div class="form-group">
+            <label>UTR Number</label>
+            <input type="text" id="utrInput" placeholder="UTR number yahan dalo" maxlength="16" inputmode="numeric">
+        </div>
+
+        <button class="btn" id="submitBtn" onclick="submitUtr()">
+            <span id="btnText"><i class="fas fa-check-circle"></i> Submit UTR</span>
+            <span id="btnLoader" class="loading"><span class="loader"></span> Submitting...</span>
+        </button>
+
+        <div class="error-msg" id="errorMsg"></div>
+        <div class="info">UTR number aapko UPI app ke transaction history mein mil jayega</div>
+    </div>
+
+    <!-- Success Section -->
+    <div class="card success" id="success-section">
+        <div class="icon">&#9989;</div>
+        <div class="title">Request Submitted!</div>
+        <div class="subtitle">Admin jaldi verify karega. Wallet update ho jayega.</div>
+        <div class="payment-id" id="successOrderId"></div>
+        <button class="back-btn" onclick="goHome()">Home</button>
+    </div>
+
+    <script>
+        // URL se payment_id lo
+        const params = new URLSearchParams(window.location.search);
+        const paymentId = params.get('payment_id') || '';
+
+        if (paymentId) {
+            document.getElementById('paymentIdDisplay').textContent = 'Payment ID: ' + paymentId;
+        } else {
+            document.getElementById('paymentIdDisplay').textContent = '';
+        }
+
+        // Only numbers allow
+        document.getElementById('utrInput').addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+
+        async function submitUtr() {
+            const utr = document.getElementById('utrInput').value.trim();
+            const errorEl = document.getElementById('errorMsg');
+            const btnText = document.getElementById('btnText');
+            const btnLoader = document.getElementById('btnLoader');
+            const submitBtn = document.getElementById('submitBtn');
+
+            errorEl.style.display = 'none';
+
+            if (!utr) {
+                errorEl.textContent = 'UTR number dalo';
+                errorEl.style.display = 'block';
+                return;
+            }
+            if (utr.length < 6) {
+                errorEl.textContent = 'UTR number kam se kam 6 digits ka hona chahiye';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            btnText.style.display = 'none';
+            btnLoader.style.display = 'inline';
+            submitBtn.disabled = true;
+
+            try {
+                const res = await fetch('https://php-vakki-8740.wasmer.app/verify-utr.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        utr: utr,
+                        userId: params.get('user_id') || '',
+                        payment_id: paymentId
+                    })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    document.getElementById('form-section').style.display = 'none';
+                    document.getElementById('success-section').style.display = 'block';
+                    document.getElementById('successOrderId').textContent = 'Order ID: ' + (data.order_id || paymentId);
+                } else {
+                    errorEl.textContent = data.error || 'Submit failed';
+                    errorEl.style.display = 'block';
+                }
+            } catch (e) {
+                errorEl.textContent = 'Network error. Dobara try karo.';
+                errorEl.style.display = 'block';
+            }
+
+            btnText.style.display = 'inline';
+            btnLoader.style.display = 'none';
+            submitBtn.disabled = false;
+        }
+
+        function goHome() {
+            window.location.href = 'https://ludoroyalclub.vercel.app';
+        }
+    </script>
+</body>
+</html>
