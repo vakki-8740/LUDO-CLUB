@@ -322,6 +322,7 @@ function trxRow(t) {
             <td>${t.type || 'N/A'}</td>
             <td>₹${t.amount || 0}</td>
             <td>${t.date || 'N/A'}</td>
+            <td>${t.utr ? '<code style="font-size:11px;background:#f2f2f7;padding:2px 6px;border-radius:4px;">' + t.utr + '</code>' : '--'}</td>
             <td><span style="color:${t.status === 'Success' ? 'var(--success)' : t.status === 'Pending' ? 'var(--warning)' : 'var(--danger)'}">${t.status || 'Pending'}</span></td>
             <td class="action-btns">
                 ${t.status === 'Pending' ? `
@@ -335,7 +336,7 @@ function trxRow(t) {
 function renderTrx() {
     document.getElementById('trx-list').innerHTML = allTrx.length
         ? allTrx.map(trxRow).join('')
-        : '<tr><td colspan="6" style="text-align:center;">No transactions</td></tr>';
+        : '<tr><td colspan="7" style="text-align:center;">No transactions</td></tr>';
 }
 
 function filterTrx() {
@@ -352,7 +353,7 @@ function filterTrx() {
     });
     document.getElementById('trx-list').innerHTML = filtered.length
         ? filtered.map(trxRow).join('')
-        : '<tr><td colspan="6" style="text-align:center;">No matching transactions</td></tr>';
+        : '<tr><td colspan="7" style="text-align:center;">No matching transactions</td></tr>';
 }
 
 async function approveTrx(id) {
