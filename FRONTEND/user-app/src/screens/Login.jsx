@@ -110,9 +110,11 @@ export default function Login({ toast }) {
         return;
       }
 
+      console.log('Step 1: Creating auth user...');
       const cred = await createUserWithEmailAndPassword(auth, mobile + '@lrc.app', pass);
       const uid = cred.user.uid;
       const userId = generateUserId();
+      console.log('Step 2: Auth user created, UID:', uid);
 
       let referredBy = '';
       if (referral) {
@@ -120,14 +122,15 @@ export default function Login({ toast }) {
         if (!refSnap.empty) referredBy = referral;
       }
 
+      console.log('Step 3: Writing to Firestore...');
       await setDoc(doc(db, 'users', uid), {
         name, mobile, userId, balance: 0, totalDeposit: 0, totalWithdraw: 0, totalWin: 0,
         status: 'active', referralCode: userId, referredBy: referredBy || '',
         referralCommission: 0, kycStatus: 'none', createdAt: new Date().toISOString(),
       });
+      console.log('Step 4: Firestore write done!');
 
       toast('Account ban gaya! Ab login karo.', '#34c759');
-      // Firebase auth sign out karo taaki login page pe ja sake
       const { signOut } = await import('firebase/auth');
       await signOut(auth);
       setMode('login');
