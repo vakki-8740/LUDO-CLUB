@@ -97,10 +97,14 @@ input:focus, select:focus { outline:none; }
   display: flex;
   align-items: center;
 }
-.nl-btns {
+.nl-btns, .nl-bottom {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  padding: 0 24px 40px;
+  max-width: 400px;
+  width: 100%;
+  margin: 0 auto;
 }
 .nl-btn-primary {
   width: 100%;
