@@ -160,31 +160,36 @@ export default function App() {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
 
-  // Auth + profile — Firebase Auth se auto-login
+  // Auth — localStorage se (PHP backend login)
   useEffect(() => {
-    const unsub = auth.onAuthStateChanged(async (fbUser) => {
-      if (fbUser) {
-        setUser({ uid: fbUser.uid });
-        setProfile({ uid: fbUser.uid });
-        setAuthChecked(true);
-        // Firestore se profile baad mein load karo
-        try {
-          const snap = await getDoc(doc(db, 'users', fbUser.uid));
-          if (snap.exists()) {
-            const data = { uid: fbUser.uid, ...snap.data() };
-            setProfile(data);
-          }
-        } catch (e) {}
-      } else {
-        setUser(null);
-        setProfile(null);
-        setAuthChecked(true);
-      }
-    });
-    return unsub;
+    const saved = localStorage.getItem('lrc_user');
+    if (saved) {
+      try {
+        const userData = JSON.parse(saved);
+        if (userData && userData.uid) {
+          setUser(userData);
+          setProfile(userData);
+        }
+      } catch (e) {}
+    }
+    setAuthChecked(true);
   }, []);
 
-  // Realtime bets
+  // Profile — localStorage data se (PHP backend)
+  useEffect(() => {
+    if (!user?.uid) return;
+    // localStorage se profile refresh karo har 5 sec
+    const interval = setInterval(() => {
+      const saved = localStorage.getItem('lrc_user');
+      if (saved) {
+        try {
+          const data = JSON.parse(saved);
+          setProfile(data);
+        } catch (e) {}
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [user?.uid]);
   useEffect(() => {
     if (!user) return;
     const unsub = onSnapshot(
