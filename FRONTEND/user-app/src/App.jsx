@@ -164,22 +164,20 @@ export default function App() {
   useEffect(() => {
     const unsub = auth.onAuthStateChanged(async (fbUser) => {
       if (fbUser) {
-        // Firebase user mila — Firestore se profile lo
+        setUser({ uid: fbUser.uid });
         try {
           const snap = await import('firebase/firestore').then(m =>
             m.getDoc(m.doc(db, 'users', fbUser.uid))
           );
           if (snap.exists()) {
             const data = { uid: fbUser.uid, ...snap.data() };
-            setUser(data);
             setProfile(data);
           } else {
-            setUser({ uid: fbUser.uid });
-            setProfile(null);
+            // Naya user hai — profile baad mein aayega
+            setProfile({ uid: fbUser.uid });
           }
         } catch (e) {
-          setUser({ uid: fbUser.uid });
-          setProfile(null);
+          setProfile({ uid: fbUser.uid });
         }
       } else {
         setUser(null);
