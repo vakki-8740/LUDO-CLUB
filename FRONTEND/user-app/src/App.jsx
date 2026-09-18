@@ -165,25 +165,21 @@ export default function App() {
     const unsub = auth.onAuthStateChanged(async (fbUser) => {
       if (fbUser) {
         setUser({ uid: fbUser.uid });
+        setProfile({ uid: fbUser.uid });
+        setAuthChecked(true);
+        // Firestore se profile baad mein load karo
         try {
-          const snap = await import('firebase/firestore').then(m =>
-            m.getDoc(m.doc(db, 'users', fbUser.uid))
-          );
+          const snap = await getDoc(doc(db, 'users', fbUser.uid));
           if (snap.exists()) {
             const data = { uid: fbUser.uid, ...snap.data() };
             setProfile(data);
-          } else {
-            // Naya user hai — profile baad mein aayega
-            setProfile({ uid: fbUser.uid });
           }
-        } catch (e) {
-          setProfile({ uid: fbUser.uid });
-        }
+        } catch (e) {}
       } else {
         setUser(null);
         setProfile(null);
+        setAuthChecked(true);
       }
-      setAuthChecked(true);
     });
     return unsub;
   }, []);
