@@ -140,7 +140,8 @@ function loadUsers() {
 function userRow(u) {
     return `
         <tr>
-            <td><strong>${u.name || 'Unknown'}</strong><br><small style="color:var(--text-muted);">${u.email || ''}</small></td>
+            <td><strong>${u.name || 'Unknown'}</strong><br><small style="color:var(--text-muted);">${u.email ? u.email.replace('@lrc.app', '') : ''}</small></td>
+            <td>${u.mobile || '--'}</td>
             <td>${u.userId || u.id}</td>
             <td>₹${u.balance || 0}</td>
             <td><span style="color:${u.status === 'blocked' ? 'var(--danger)' : 'var(--success)'}">${u.status === 'blocked' ? 'Blocked' : 'Active'}</span></td>
@@ -156,7 +157,7 @@ function renderUsers() {
     const list = document.getElementById('user-list');
     list.innerHTML = allUsers.length
         ? allUsers.map(userRow).join('')
-        : '<tr><td colspan="5" style="text-align:center;">No users found</td></tr>';
+        : '<tr><td colspan="6" style="text-align:center;">No users found</td></tr>';
 }
 
 function filterUsers() {
@@ -164,10 +165,11 @@ function filterUsers() {
     const filtered = allUsers.filter(u =>
         (u.name || '').toLowerCase().includes(q) ||
         (u.email || '').toLowerCase().includes(q) ||
+        (u.mobile || '').includes(q) ||
         String(u.userId || u.id).toLowerCase().includes(q));
     document.getElementById('user-list').innerHTML = filtered.length
         ? filtered.map(userRow).join('')
-        : '<tr><td colspan="5" style="text-align:center;">No matching users</td></tr>';
+        : '<tr><td colspan="6" style="text-align:center;">No matching users</td></tr>';
 }
 
 async function toggleUserStatus(uid) {
