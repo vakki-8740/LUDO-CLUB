@@ -160,20 +160,35 @@ export default function App() {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
 
-  // Auth + profile (localStorage se - PHP backend)
+  // Auth + profile — Firebase Auth se auto-login
   useEffect(() => {
-    const saved = localStorage.getItem('lrc_user');
-    if (saved) {
-      try {
-        const userData = JSON.parse(saved);
-        setUser(userData);
-        setProfile(userData);
-      } catch (e) {
-        localStorage.removeItem('lrc_user');
+    const unsub = auth.onAuthStateChanged(async (fbUser) => {
+      if (fbUser) {
+        // Firebase user mila — Firestore se profile lo
+        try {
+          const snap = await import('firebase/firestore').then(m =>
+            m.getDoc(m.doc(db, 'users', fbUser.uid))
+          );
+          if (snap.exists()) {
+            const data = { uid: fbUser.uid, ...snap.data() };
+            setUser(data);
+            setProfile(data);
+          } else {
+            setUser({ uid: fbUser.uid });
+            setProfile(null);
+          }
+        } catch (e) {
+          setUser({ uid: fbUser.uid });
+          setProfile(null);
+        }
+      } else {
+        setUser(null);
+        setProfile(null);
       }
-    }
-    setAuthChecked(true);
-  }, [toast]);
+      setAuthChecked(true);
+    });
+    return unsub;
+  }, []);
 
   // Realtime bets
   useEffect(() => {
@@ -190,21 +205,17 @@ export default function App() {
     return unsub;
   }, [user]);
 
-  // Live profile (PHP backend se refresh)
+  // Live profile — Firestore se realtime
   useEffect(() => {
-    if (!user) return;
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch('https://php-vakki-8740.wasmer.app/user.php?uid=' + user.uid);
-        const data = await res.json();
-        if (data.success) {
-          setProfile(data);
-          localStorage.setItem('lrc_user', JSON.stringify({ ...user, ...data }));
-        }
-      } catch (e) {}
-    }, 10000); // Har 10 sec refresh
-    return () => clearInterval(interval);
-  }, [user]);
+    if (!user?.uid) return;
+    const unsub = onSnapshot(doc(db, 'users', user.uid), (snap) => {
+      if (snap.exists()) {
+        const data = { uid: snap.id, ...snap.data() };
+        setProfile(data);
+      }
+    }, () => {});
+    return unsub;
+  }, [user?.uid]);
 
   // AUTO-OPEN match page:
   // - Creator: meri waiting bet par koi aaya (joined) -> match page
