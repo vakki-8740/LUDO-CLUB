@@ -1,6 +1,6 @@
 {
-  "name": "Ludo Royal Club - Play & Win",
-  "short_name": "Ludo Royal Club",
+  "name": "LUDO KILLER - Play & Win",
+  "short_name": "LUDO KILLER",
   "description": "Play Ludo games and win real money prizes",
   "start_url": "./index.html",
   "display": "standalone",
@@ -10,7 +10,7 @@
   "categories": ["games", "entertainment"],
   "icons": [
     { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "./PROJECT-KOGO/ludo-royal-club-logo.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "./PROJECT-KOGO/ludo-royal-club-logo.png", "sizes": "any", "type": "image/png" }
+    { "src": "./logo.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "./logo.png", "sizes": "any", "type": "image/png" }
   ]
 }
